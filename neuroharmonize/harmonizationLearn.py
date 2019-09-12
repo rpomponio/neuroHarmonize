@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-from neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
+from neuroCombat.neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
 def harmonizationLearn(data, covars):
     """
