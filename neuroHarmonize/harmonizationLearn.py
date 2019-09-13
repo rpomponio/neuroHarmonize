@@ -1,10 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-from pygam import LinearGAM, s
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
-def harmonizationLearn(data, covars, nonlinear_covars=[]):
+def harmonizationLearn(data, covars, nonlinear_terms=[]):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -19,10 +18,10 @@ def harmonizationLearn(data, covars, nonlinear_covars=[]):
         must contain a single column "SITE" with site labels for ComBat
         dimensions are N_samples x (N_covariates + 1)
         
-    nonlinear_covars : a list, default []
+    nonlinear_terms : a list, default []
         names of columns in covars to include as nonlinear terms
-        if empty, regular ComBat is applied with a linear model of covariates
-        if not empty, will employ generalized additive models (GAMs)
+        if empty, ComBat is applied with a linear model of covariates
+        if not empty, generalized additive models (GAMs) are used
         can be any or all columns in covars except "SITE"
     
     Returns

@@ -21,7 +21,7 @@ train on baseline images and avoid training on the entire set of images).
 2. Specify covariates with penalized nonlinear effects. For example, age tends
 to exhibit a nonlinear relationship with brain volumes, particularly in developmental and
 aging cohorts. Nonlinear effects are implemented using generalized additive
-models (GAMs) via the ``pyGAM`` package.
+models (GAMs) via the ``???`` package.
 
 3. Apply a harmonization model to NIFTI images. In cases where loading the
 entire set of images would exceed memory capacity, it is still possible to
