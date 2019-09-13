@@ -16,7 +16,7 @@ package:
 
 1. Train a harmonization model on a subset of data, then apply the model to the
 whole set (e.g. longitudinal analysis may require harmonization, but one should
-train on baseline images and avoid training on the entire set of images)
+train on baseline images and avoid training on the entire set of images).
 
 2. Specify covariates with nonlinear effects. For example, age tends to exhibit
 a nonlinear relationship with brain volumes, particularly in developmental and
@@ -49,9 +49,19 @@ Quick Start
 -----------
 
 If you want to harmonize a dataset of brain volumes from multiple sites, you
-begin by loading the brain data as a numpy array. Next, you 
+begin by loading the brain data as a numpy array. Next, you load covariates
+as a pandas DataFrame. The covariates DataFrame must include one column called
+"SITE", which indicates the site from each each sample came from.
 
 Example use:
 
-    >>> from neuroHarmonize import loadHarmonizationModel
-    >>> loadHarmonizationModel('my_model')
+    >>> from neuroHarmonize import harmonizationLearn
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> # load your data and all numeric covariates
+    >>> my_data = pd.read_csv('brain_volumes.csv')
+    >>> my_data = np.array(my_data)
+    >>> covars = pd.read_csv('subject_info.csv')
+    >>> # run harmonization and store the adjusted data
+    >>> my_model, my_data_adj = harmonizationLearn(my_data, covars)
+    
