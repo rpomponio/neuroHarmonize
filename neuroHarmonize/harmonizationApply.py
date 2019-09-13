@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from neuroCombat.neuroCombat import make_design_matrix, adjust_data_final
+from .neuroCombat import make_design_matrix, adjust_data_final
 
 def harmonizationApply(data, covars, model):
     """

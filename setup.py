@@ -13,6 +13,5 @@ setup(name='neuroHarmonize',
       author_email='raymond.pomponio@pennmedicine.upenn.edu',
       license='MIT',
       packages=['neuroHarmonize'],
-      install_requires=['neuroCombat', 'numpy', 'pandas', 'nibabel'],
-      dependency_links=['http://github.com/ncullen93/neuroCombat'],
+      install_requires=['numpy', 'pandas', 'nibabel'],
       zip_safe=False)
