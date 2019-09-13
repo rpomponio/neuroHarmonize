@@ -18,15 +18,15 @@ package:
 whole set (e.g. longitudinal analysis may require harmonization, but one should
 train on baseline images and avoid training on the entire set of images).
 
-2. Specify covariates with nonlinear effects. For example, age tends to exhibit
-a nonlinear relationship with brain volumes, particularly in developmental and
+2. Specify covariates with penalized nonlinear effects. For example, age tends
+to exhibit a nonlinear relationship with brain volumes, particularly in developmental and
 aging cohorts. Nonlinear effects are implemented using generalized additive
-models (GAMs).
+models (GAMs) via the ``pyGAM`` package.
 
 3. Apply a harmonization model to NIFTI images. In cases where loading the
 entire set of images would exceed memory capacity, it is still possible to
 harmonize the images by sequentially loading and adjusting images one-by-one.
-This functionality is available in this package.
+This functionality is available in this package via the ``nibabel`` package.
 
 Installation
 ------------
