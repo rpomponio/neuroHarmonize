@@ -14,18 +14,17 @@ but the source code is included to call neuroCombat functions)
 Specifically, the user is able to perform the following procedures using this
 package:
 
-    1. Train a harmonization model on a subset of data, then apply the model
-    to the whole set (e.g. longitudinal analysis may require harmonization, but
-    one should train on baseline images and avoid training on the entire set of
-    images)
-    2. Specify covariates with nonlinear effects. For example, age tends to
-    exhibit a nonlinear relationship with brain volumes, particularly in
-    developmental and aging studies. Nonlinear effects are implemented using
-    generalized additive models (GAMs).
-    3. Apply a harmonization model to NIFTI images. In cases where loading
-    the entire set of images would exceed memory capacity, it is still possible
-    to harmonize the images by sequentially loading and adjusting images
-    one-by-one. This functionality is available in this package.
+1. Train a harmonization model on a subset of data, then apply the model to the
+whole set (e.g. longitudinal analysis may require harmonization, but one should
+train on baseline images and avoid training on the entire set of images)
+2. Specify covariates with nonlinear effects. For example, age tends to exhibit
+a nonlinear relationship with brain volumes, particularly in developmental and
+aging cohorts. Nonlinear effects are implemented using generalized additive
+models (GAMs).
+3. Apply a harmonization model to NIFTI images. In cases where loading the
+entire set of images would exceed memory capacity, it is still possible to
+harmonize the images by sequentially loading and adjusting images one-by-one.
+This functionality is available in this package.
 
 Installation
 ------------
