@@ -7,9 +7,9 @@ Overview
 ---------
 
 This package extends the functionality of the package developed by Nick Cullen,
-neuroCombat, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
-(To make installation easier, neuroCombat is not a dependency for this package,
-but the source code is included to call neuroCombat functions)
+``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
+(To make installation easier, ``neuroCombat`` is not a dependency for this package,
+but the source code is included to call ``neuroCombat`` functions)
 
 Specifically, the user is able to perform the following procedures using this
 package:
@@ -20,13 +20,13 @@ train on baseline images and avoid training on the entire set of images).
 
 2. Specify covariates with penalized nonlinear effects. For example, age tends
 to exhibit a nonlinear relationship with brain volumes, particularly in developmental and
-aging cohorts. Nonlinear effects are implemented using generalized additive
-models (GAMs) via the ``statsmodels`` package.
+aging cohorts. Nonlinear effects are implemented using Generalized Additive
+Models (GAMs) via the ``statsmodels`` package.
 
 3. Apply a harmonization model to NIFTI images. In cases where loading the
 entire set of images would exceed memory capacity, it is still possible to
 harmonize the images by sequentially loading and adjusting images one-by-one.
-This functionality is available in this package via the ``nibabel`` package.
+This functionality is made available in via the ``nibabel`` package.
 
 Installation
 ------------

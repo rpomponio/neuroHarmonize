@@ -129,7 +129,7 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
         
         if X.shape[0] > 10:
             print('\nWARNING: more than 10 variables will be harmonized with smoothing model.')
-            print(' Computation will take some time. For linear model (faster) remove smooth_terms arg.')
+            print(' Computation will take some time. For linear model (faster) remove arg: smooth_terms.')
         # initialize penalization weight (not the final weight)
         alpha = np.array([1.0] * len(smooth_cols))
         # initialize an empty matrix for beta
@@ -158,19 +158,25 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
     return s_data, stand_mean, var_pooled, B_hat, grand_mean
 
 def saveHarmonizationModel(model, fldr_name):
-    """Helper function to save a model to a new folder. Will save numpy arrays."""
+    """
+    Save a harmonization model from harmonizationLearn().
+    
+    For saving model contents, this function will create a new folder specified
+    by fldr_name, and store numpy arrays as .npy files.
+    
+    If smoothing is performed, additional objects are saved.    
+    
+    """
     #fldr_name = fldr_name.replace('/', '')
     if os.path.exists(fldr_name):
         raise ValueError('Model folder already exists: %s Change name or delete to save.' % fldr_name)
     else:
         os.makedirs(fldr_name)
     # cleanup model object for saving to file
-    del model['design']
-    del model['s_data']
-    del model['stand_mean']
-    del model['n_batch']
+    do_not_save = ['design', 's_data', 'stand_mean', 'n_batch']
     for key in list(model.keys()):
-        obj_size = model[key].nbytes / 1e6
-        print('Saving model object: %s, size in MB: %4.2f' % (key, obj_size))
-        np.save(fldr_name + '/' + key + '.npy', model[key])
+        if key not in do_not_save:
+            obj_size = model[key].nbytes / 1e6
+            print('Saving model object: %s, size in MB: %4.2f' % (key, obj_size))
+            np.save(fldr_name + '/' + key + '.npy', model[key])
     return None
