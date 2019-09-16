@@ -1,4 +1,5 @@
 import os
+import pickle
 import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
@@ -105,6 +106,7 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
              'delta_star': delta_star, 'n_batch': info_dict['n_batch']}
     # transpose data to return to original shape
     bayes_data = bayes_data.T
+    
     return model, bayes_data
 
 def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
@@ -157,26 +159,26 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
 
     return s_data, stand_mean, var_pooled, B_hat, grand_mean
 
-def saveHarmonizationModel(model, fldr_name):
+def saveHarmonizationModel(model, file_name):
     """
     Save a harmonization model from harmonizationLearn().
     
-    For saving model contents, this function will create a new folder specified
-    by fldr_name, and store numpy arrays as .npy files.
-    
-    If smoothing is performed, additional objects are saved.    
+    For saving model contents, this function will create a new file specified
+    by file_name, and store the model using the pickle package.
     
     """
-    #fldr_name = fldr_name.replace('/', '')
-    if os.path.exists(fldr_name):
-        raise ValueError('Model folder already exists: %s Change name or delete to save.' % fldr_name)
-    else:
-        os.makedirs(fldr_name)
+    if os.path.exists(file_name):
+        raise ValueError('Model file already exists: %s Change name or delete to save.' % file_name)
     # cleanup model object for saving to file
-    do_not_save = ['design', 's_data', 'stand_mean', 'n_batch']
-    for key in list(model.keys()):
-        if key not in do_not_save:
-            obj_size = model[key].nbytes / 1e6
-            print('Saving model object: %s, size in MB: %4.2f' % (key, obj_size))
-            np.save(fldr_name + '/' + key + '.npy', model[key])
+    del model['s_data']
+    del model['stand_mean']
+    # estimate size of out_file
+    est_size = 0
+    for key in ['B_hat', 'grand_mean', 'var_pooled', 'gamma_star', 'delta_star']:
+        est_size += model[key].nbytes / 1e6
+    print('Saving model object, estimated size in MB: %4.2f' % est_size)
+    out_file = open(file_name, 'wb')
+    pickle.dump(model, out_file)
+    out_file.close()
+    
     return None

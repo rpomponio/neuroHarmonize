@@ -1,4 +1,5 @@
 import os
+import pickle
 import numpy as np
 import pandas as pd
 import nibabel as nib
@@ -60,6 +61,7 @@ def harmonizationApply(data, covars, model):
                                    stand_mean, var_pooled, info_dict)
     # transpose data to return to original shape
     bayes_data = bayes_data.T
+    
     return bayes_data
 
 def ApplyStandardizationAcrossFeatures(X, design, info_dict, model):
@@ -92,6 +94,7 @@ def loadHarmonizationModel(fldr_name):
             'gamma_star': np.load(fldr_name + '/gamma_star.npy'),
             'delta_star': np.load(fldr_name + '/delta_star.npy')}
     model['n_batch'] = model['gamma_star'].shape[0]
+    
     return model
 
 def harmonizationApplyNIFTI(data, covars, model, img_mask, path_output='./'):
