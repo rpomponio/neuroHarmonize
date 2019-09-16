@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import pandas as pd
+from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
-def harmonizationLearn(data, covars, nonlinear_terms=[]):
+def harmonizationLearn(data, covars, smooth_terms=[]):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -18,11 +19,12 @@ def harmonizationLearn(data, covars, nonlinear_terms=[]):
         must contain a single column "SITE" with site labels for ComBat
         dimensions are N_samples x (N_covariates + 1)
         
-    nonlinear_terms : a list, default []
-        names of columns in covars to include as nonlinear terms
+    smooth_terms (Optional) :  a list, default []
+        names of columns in covars to include as smooth, nonlinear terms
+        can be any or all columns in covars, except "SITE"
         if empty, ComBat is applied with a linear model of covariates
-        if not empty, generalized additive models (GAMs) are used
-        can be any or all columns in covars except "SITE"
+        if not empty, Generalized Additive Models (GAMs) are used
+        will increase computation time due to search for optimal smoothing
     
     Returns
     -------
@@ -40,6 +42,17 @@ def harmonizationLearn(data, covars, nonlinear_terms=[]):
     batch_col = covars.columns.get_loc('SITE')
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
+    smooth_cols = [covars.columns.get_loc(c) for c in covars.columns if c in smooth_terms]
+    # maintain a dictionary of smoothing information
+    smooth_model = {
+        'perform_smoothing': len(smooth_terms)>0,
+        'smooth_terms': smooth_terms,
+        'smooth_cols': smooth_cols,
+        'bsplines_constructor': None,
+        'smooth_design': None,
+        'formula': None,
+        'df_gam': None
+    }
     covars = np.array(covars, dtype='object')
     ### additional setup code from neuroCombat implementation:
     # convert batch col to integer
@@ -54,9 +67,35 @@ def harmonizationLearn(data, covars, nonlinear_terms=[]):
         'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
     }
     ###
-    # run steps to perform ComBat
     design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
-    s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(data, design, info_dict)
+    ### additional setup if smoothing is performed
+    if smooth_model['perform_smoothing']:
+        # create cubic spline basis for smooth terms
+        X_spline = covars[:, smooth_cols].astype(float)
+        bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols))
+        # construct formula and dataframe required for gam
+        formula = 'y ~ '
+        df_gam = {}
+        for b in batch_levels:
+            formula = formula + 'x' + str(b) + ' + '
+            df_gam['x' + str(b)] = design[:, b]
+        for c in num_cols:
+            if c not in smooth_cols:
+                formula = formula + 'c' + str(c) + ' + '
+                df_gam['c' + str(c)] = covars[:, c].astype(float)
+        formula = formula[:-2] + '- 1'
+        df_gam = pd.DataFrame(df_gam)
+        # for matrix operations, a modified design matrix is required
+        design_gam = np.concatenate((df_gam, bs.basis), axis=1)
+        # store objects in dictionary
+        smooth_model['bsplines_constructor'] = bs
+        smooth_model['formula'] = formula
+        smooth_model['df_gam'] = df_gam
+        smooth_model['smooth_design'] = design_gam
+    ###
+    # run steps to perform ComBat
+    s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(
+        data, design, info_dict, smooth_model)
     LS_dict = fit_LS_model_and_find_priors(s_data, design, info_dict)
     gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
     bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
@@ -68,14 +107,44 @@ def harmonizationLearn(data, covars, nonlinear_terms=[]):
     bayes_data = bayes_data.T
     return model, bayes_data
 
-def StandardizeAcrossFeatures(X, design, info_dict):
-    """Modified from neuroCombat to return coefficients and mean estimates in
-    addition to default standardization parameters."""
+def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
+    """
+    The original neuroCombat function standardize_across_features plus
+    necessary modifications.
+    
+    This function will return all estimated parameters in addition to the
+    standardized data.
+    """
     n_batch = info_dict['n_batch']
     n_sample = info_dict['n_sample']
     sample_per_batch = info_dict['sample_per_batch']
 
-    B_hat = np.dot(np.dot(np.linalg.inv(np.dot(design.T, design)), design.T), X.T)
+    # perform smoothing with GAMs if selected
+    if smooth_model['perform_smoothing']:
+        smooth_cols = smooth_model['smooth_cols']
+        design = smooth_model['smooth_design']
+        bs = smooth_model['bsplines_constructor']
+        formula = smooth_model['formula']
+        df_gam = smooth_model['df_gam']
+        
+        if X.shape[0] > 10:
+            print('\nWARNING: more than 10 variables will be harmonized with smoothing model.')
+            print(' Computation will take some time. For linear model (faster) remove smooth_terms arg.')
+        # initialize penalization weight (not the final weight)
+        alpha = np.array([1.0] * len(smooth_cols))
+        # initialize an empty matrix for beta
+        B_hat = np.zeros((design.shape[1], X.shape[0]))
+        # estimate beta for each variable to be harmonized
+        for i in range(0, X.shape[0]):
+            df_gam.loc[:, 'y'] = X[i, :]
+            gam_bs = GLMGam.from_formula(formula, data=df_gam, smoother=bs, alpha=alpha)
+            res_bs = gam_bs.fit()
+            # Optimal penalization weights alpha can be obtained through gcv
+            gam_bs.alpha = gam_bs.select_penweight()[0]
+            res_bs_optim = gam_bs.fit()
+            B_hat[:, i] = res_bs_optim.params
+    else:
+        B_hat = np.dot(np.dot(np.linalg.inv(np.dot(design.T, design)), design.T), X.T)
     grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
     var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
 
@@ -90,7 +159,7 @@ def StandardizeAcrossFeatures(X, design, info_dict):
 
 def saveHarmonizationModel(model, fldr_name):
     """Helper function to save a model to a new folder. Will save numpy arrays."""
-    fldr_name = fldr_name.replace('/', '')
+    #fldr_name = fldr_name.replace('/', '')
     if os.path.exists(fldr_name):
         raise ValueError('Model folder already exists: %s Change name or delete to save.' % fldr_name)
     else:

@@ -21,7 +21,7 @@ train on baseline images and avoid training on the entire set of images).
 2. Specify covariates with penalized nonlinear effects. For example, age tends
 to exhibit a nonlinear relationship with brain volumes, particularly in developmental and
 aging cohorts. Nonlinear effects are implemented using generalized additive
-models (GAMs) via the ``???`` package.
+models (GAMs) via the ``statsmodels`` package.
 
 3. Apply a harmonization model to NIFTI images. In cases where loading the
 entire set of images would exceed memory capacity, it is still possible to
@@ -31,7 +31,11 @@ This functionality is available in this package via the ``nibabel`` package.
 Installation
 ------------
 
-Option 1: Install from GitHub
+Option 1: Install from PyPI (recommended)
+
+(instructions will be written once package is published)
+
+Option 2: Install from GitHub
 
 Download the zipped repository on GitHub: https://github.com/rpomponio/neuroHarmonize
 
@@ -41,17 +45,17 @@ Open a terminal and run:
 
     >>> pip install .
 
-Option 2: Install from PyPI
-
-(instructions will be written once package is published)
-
 Quick Start
 -----------
 
 If you want to harmonize a dataset of brain volumes from multiple sites, you
-begin by loading the brain data as a numpy array. Next, you load covariates
-as a pandas DataFrame. The covariates DataFrame must include one column called
-"SITE", which indicates the site from each each sample came from.
+begin by loading the brain data as a numpy array (in this exampple I have named
+it ``my_data``). Next, you load covariates (``covars``) as a pandas DataFrame.
+The covariates DataFrame must include one column called "SITE", which is a label
+of site names or site numbers. The function ``harmonizationLearn()`` will train
+a harmonization model and return both the model and the data. Saving the model
+is necessary if you wish to apply it on out-of-sample data, such as longitudinal
+follow-up scans.
 
 Example use:
 

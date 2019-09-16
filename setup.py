@@ -13,5 +13,5 @@ setup(name='neuroHarmonize',
       author_email='raymond.pomponio@pennmedicine.upenn.edu',
       license='MIT',
       packages=['neuroHarmonize'],
-      install_requires=['numpy', 'pandas', 'nibabel'],
+      install_requires=['numpy', 'pandas', 'nibabel', 'statsmodels'],
       zip_safe=False)

@@ -83,7 +83,7 @@ def ApplyStandardizationAcrossFeatures(X, design, info_dict, model):
 
 def loadHarmonizationModel(fldr_name):
     """Helper function to load a model from a specified folder"""
-    fldr_name = fldr_name.replace('/', '')
+    #fldr_name = fldr_name.replace('/', '')
     if not os.path.exists(fldr_name):
         raise ValueError('Model folder does not exist: %s' % fldr_name)
     model = {'var_pooled': np.load(fldr_name + '/var_pooled.npy'),
