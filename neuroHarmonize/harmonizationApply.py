@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import nibabel as nib
+from statsmodels.gam.api import BSplines
 from .neuroCombat import make_design_matrix, adjust_data_final
 
 def harmonizationApply(data, covars, model):
@@ -21,7 +22,7 @@ def harmonizationApply(data, covars, model):
         dimensions are N_samples x (N_covariates + 1)
         
     model : a dictionary of model parameters
-        the output of a call to harmonizationLearn
+        the output of a call to harmonizationLearn()
     
     Returns
     -------
@@ -37,6 +38,9 @@ def harmonizationApply(data, covars, model):
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     covars = np.array(covars, dtype='object')
+    # load the smoothing model
+    smooth_model = model['smooth_model']
+    smooth_cols = smooth_model['smooth_cols']
     ### additional setup code from neuroCombat implementation:
     # convert batch col to integer
     covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
@@ -51,11 +55,35 @@ def harmonizationApply(data, covars, model):
     }
     ###
     # check sites are identical in training dataset
-    check_sites = info_dict['n_batch']==model['n_batch']
+    check_sites = info_dict['n_batch']==model['info_dict']['n_batch']
     if not check_sites:
         raise ValueError('Number of sites in holdout data not identical to training data.')
     # apply ComBat without re-learning model parameters
     design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    ### additional setup if smoothing is performed
+    if smooth_model['perform_smoothing']:
+        # create cubic spline basis for smooth terms
+        X_spline = covars[:, smooth_cols].astype(float)
+        bs_basis = smooth_model['bsplines_constructor'].transform(X_spline)
+        # construct formula and dataframe required for gam
+        formula = 'y ~ '
+        df_gam = {}
+        for b in batch_levels:
+            formula = formula + 'x' + str(b) + ' + '
+            df_gam['x' + str(b)] = design[:, b]
+        for c in num_cols:
+            if c not in smooth_cols:
+                formula = formula + 'c' + str(c) + ' + '
+                df_gam['c' + str(c)] = covars[:, c].astype(float)
+        formula = formula[:-2] + '- 1'
+        df_gam = pd.DataFrame(df_gam)
+        # check formulas are identical in training dataset
+        check_formula = formula==smooth_model['formula']
+        if not check_formula:
+            raise ValueError('GAM formula for holdout data not identical to training data.')
+        # for matrix operations, a modified design matrix is required
+        design = np.concatenate((df_gam, bs_basis), axis=1)
+    ###
     s_data, stand_mean, var_pooled = ApplyStandardizationAcrossFeatures(data, design, info_dict, model)
     bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
                                    stand_mean, var_pooled, info_dict)
@@ -64,8 +92,14 @@ def harmonizationApply(data, covars, model):
     
     return bayes_data
 
-def ApplyStandardizationAcrossFeatures(X, design, info_dict, model):
-    """Modified from neuroCombat to apply a pre-trained harmonization model to new data."""
+def ApplyStandardizationAcrossFeatures(X, design, info_dict, model):   
+    """
+    The original neuroCombat function standardize_across_features plus
+    necessary modifications.
+    
+    This function will apply a pre-trained harmonization model to new data.
+    """
+    
     n_batch = info_dict['n_batch']
     n_sample = info_dict['n_sample']
     sample_per_batch = info_dict['sample_per_batch']
@@ -78,22 +112,21 @@ def ApplyStandardizationAcrossFeatures(X, design, info_dict, model):
     tmp = np.array(design.copy())
     tmp[:,:n_batch] = 0
     stand_mean  += np.dot(tmp, B_hat).T
-
+    
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
     return s_data, stand_mean, var_pooled
 
-def loadHarmonizationModel(fldr_name):
-    """Helper function to load a model from a specified folder"""
-    #fldr_name = fldr_name.replace('/', '')
-    if not os.path.exists(fldr_name):
-        raise ValueError('Model folder does not exist: %s' % fldr_name)
-    model = {'var_pooled': np.load(fldr_name + '/var_pooled.npy'),
-            'B_hat': np.load(fldr_name + '/B_hat.npy'),
-            'grand_mean': np.load(fldr_name + '/grand_mean.npy'),
-            'gamma_star': np.load(fldr_name + '/gamma_star.npy'),
-            'delta_star': np.load(fldr_name + '/delta_star.npy')}
-    model['n_batch'] = model['gamma_star'].shape[0]
+def loadHarmonizationModel(file_name):
+    """
+    For loading model contents, this function will load a model specified
+    by file_name using the pickle package.
+    """
+    if not os.path.exists(file_name):
+        raise ValueError('Model file does not exist: %s' % file_name)
+    in_file = open(file_name,'rb')
+    model = pickle.load(in_file)
+    in_file.close()
     
     return model
 

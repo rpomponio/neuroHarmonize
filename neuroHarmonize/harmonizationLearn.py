@@ -50,7 +50,6 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
         'smooth_terms': smooth_terms,
         'smooth_cols': smooth_cols,
         'bsplines_constructor': None,
-        'smooth_design': None,
         'formula': None,
         'df_gam': None
     }
@@ -87,12 +86,11 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
         formula = formula[:-2] + '- 1'
         df_gam = pd.DataFrame(df_gam)
         # for matrix operations, a modified design matrix is required
-        design_gam = np.concatenate((df_gam, bs.basis), axis=1)
+        design = np.concatenate((df_gam, bs.basis), axis=1)
         # store objects in dictionary
         smooth_model['bsplines_constructor'] = bs
         smooth_model['formula'] = formula
         smooth_model['df_gam'] = df_gam
-        smooth_model['smooth_design'] = design_gam
     ###
     # run steps to perform ComBat
     s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(
@@ -101,9 +99,9 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
     gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
     bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
     # save model parameters in single object
-    model = {'design': design, 's_data': s_data, 'stand_mean': stand_mean, 'var_pooled':var_pooled,
-             'B_hat':B_hat, 'grand_mean': grand_mean, 'gamma_star': gamma_star,
-             'delta_star': delta_star, 'n_batch': info_dict['n_batch']}
+    model = {'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
+             'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
+             'smooth_model': smooth_model}
     # transpose data to return to original shape
     bayes_data = bayes_data.T
     
@@ -121,10 +119,9 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
     n_sample = info_dict['n_sample']
     sample_per_batch = info_dict['sample_per_batch']
 
-    # perform smoothing with GAMs if selected
+    ### perform smoothing with GAMs if specified
     if smooth_model['perform_smoothing']:
         smooth_cols = smooth_model['smooth_cols']
-        design = smooth_model['smooth_design']
         bs = smooth_model['bsplines_constructor']
         formula = smooth_model['formula']
         df_gam = smooth_model['df_gam']
@@ -145,6 +142,7 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
             gam_bs.alpha = gam_bs.select_penweight()[0]
             res_bs_optim = gam_bs.fit()
             B_hat[:, i] = res_bs_optim.params
+    ###
     else:
         B_hat = np.dot(np.dot(np.linalg.inv(np.dot(design.T, design)), design.T), X.T)
     grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
@@ -169,9 +167,6 @@ def saveHarmonizationModel(model, file_name):
     """
     if os.path.exists(file_name):
         raise ValueError('Model file already exists: %s Change name or delete to save.' % file_name)
-    # cleanup model object for saving to file
-    del model['s_data']
-    del model['stand_mean']
     # estimate size of out_file
     est_size = 0
     for key in ['B_hat', 'grand_mean', 'var_pooled', 'gamma_star', 'delta_star']:
