@@ -7,13 +7,13 @@ Harmonization tools for multi-site neuroimaging analysis.
 Overview
 ---------
 
-This package extends the functionality of the package developed by Nick Cullen[1]_,
+This package extends the functionality of the package developed by Nick Cullen [1]_,
 ``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
 (to make installation easier, ``neuroCombat`` is not a dependency for this package,
 but the source code is included to call ``neuroCombat`` functions).
 
 ``neuroCombat`` allows the user to perform a harmonization procedure using
-the ComBat[2]_ algorithm for correcting multi-site data.
+the ComBat [2]_ algorithm for correcting multi-site data.
 
 ``neuroHarmonize`` is a package with similar functionality, but also allows the
 user to perform the following additional procedures:
@@ -35,9 +35,15 @@ Installation
 
 Option 1: Install from PyPI (recommended)
 
-*instructions will be written once package is published*
+*instructions will be written once package is released*
 
 Option 2: Install from GitHub
+
+*Warning:* This package depends on a developer version of ``statsmodels``. Until
+a newer version of ``statsmodels`` is released, the current workaround is to run
+the following in the command line:
+
+    >>> pip install git+https://github.com/statsmodels/statsmodels
 
 Download the zipped repository on GitHub: https://github.com/rpomponio/neuroHarmonize
 
