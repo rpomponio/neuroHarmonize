@@ -13,5 +13,6 @@ setup(name='neuroHarmonize',
       author_email='raymond.pomponio@pennmedicine.upenn.edu',
       license='MIT',
       packages=['neuroHarmonize'],
-      install_requires=['numpy', 'pandas', 'nibabel', 'statsmodels'],
+      install_requires=['numpy', 'pandas', 'nibabel', 'statsmodels==0.11.0.dev0'],
+      dependency_links=['http://https://github.com/statsmodels/statsmodels/master#egg=package-0.11.0']
       zip_safe=False)

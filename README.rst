@@ -2,18 +2,18 @@
 neuroHarmonize
 ==============
 
-Harmonization tools for multi-site neuroimaging studies.
+Harmonization tools for multi-site neuroimaging analysis.
 
 Overview
 ---------
 
-This package extends the functionality of the package developed by Nick Cullen,
+This package extends the functionality of the package developed by Nick Cullen[1]_,
 ``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
-(To make installation easier, ``neuroCombat`` is not a dependency for this package,
+(to make installation easier, ``neuroCombat`` is not a dependency for this package,
 but the source code is included to call ``neuroCombat`` functions).
 
 ``neuroCombat`` allows the user to perform a harmonization procedure using
-the ComBat [1]_ algorithm for correcting multi-site data.
+the ComBat[2]_ algorithm for correcting multi-site data.
 
 ``neuroHarmonize`` is a package with similar functionality, but also allows the
 user to perform the following additional procedures:
@@ -103,13 +103,26 @@ Specifying Nonlinear Covariate Effects
 
 Optional argument: ``smooth_terms``
 
+*Warning:* you cannot apply a nonlinear model to out-of-sample data if the
+range of the new data extends beyond the training data for any terms in
+``smooth_terms``. This is due to a documented issue:
+https://github.com/statsmodels/statsmodels/issues/2361
+
 Working with NIFTI Images
 -------------------------
 
 *In development*
 
+Citations
+---------
 
-.. [1] W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray expression data
-   using empirical Bayes methods. Biostatistics, 8(1):118-127, 2007.
+.. [1] Fortin, J. P., N. Cullen, Y. I. Sheline, W. D. Taylor, I. Aselcioglu,
+   P. A. Cook, P. Adams, C. Cooper, M. Fava, P. J. McGrath, M. McInnis,
+   M. L. Phillips, M. H. Trivedi, M. M. Weissman and R. T. Shinohara (2017).
+   "Harmonization of cortical thickness measurements across scanners and sites."
+   Neuroimage 167: 104-120. https://doi.org/10.1016/j.neuroimage.2017.11.024.
+.. [2] W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray
+   expression data using empirical Bayes methods. Biostatistics, 8(1):118-127,
+   2007. https://doi.org/10.1093/biostatistics/kxj037.
 
     
