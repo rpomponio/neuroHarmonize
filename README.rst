@@ -19,7 +19,7 @@ the ComBat [2]_ algorithm for correcting multi-site data.
 user to perform the following additional procedures:
 
 1. Train a harmonization model on a subset of data, then apply the model to the
-   whole set. For example, in longitudinal analyses, one may wish to train a
+   new set. For example, in longitudinal analyses, one may wish to train a
    harmonization model on baseline cases and apply the model to follow-up cases.
 2. Specify covariates with nonlinear effects. Age tends to exhibit nonlinear
    relationships with brain volumes. Nonlinear effects are implemented using
@@ -72,7 +72,7 @@ The dimensionality of this matrix must be: N_samples x N_features.
 You must also provide a **covariate matrix** which is a ``pandas`` DataFrame
 containing covariates to control for during harmonization. All covariates must
 be encoded numerically (no categorical covariates allowed). The DataFrame must
-also contain a single column "SITE" with the site labels for ComBat.
+also contain a single column "SITE" with labels for ComBat to identify sites.
 
 ::
 
@@ -102,14 +102,47 @@ Example usage:
 Applying Pre-Trained Models to New Data
 ---------------------------------------
 
-``harmonizationApply``
+If you have previously trained a harmonization model with ``harmonizationLearn``,
+you may apply the model parameters to new data with ``harmonizationApply``.
+
+First load the model:
+
+    >>> from neuroHarmonize import harmonizationApply, loadHarmonizationModel
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> # load a pre-trained model
+    >>> my_model = loadHarmonizationModel('../models/my_model')
+
+Next, prepare the holdout data on which you will apply the model. This data
+must look exactly like the training data for ``harmonizationLearn``, including
+the same number and order of covariates.
+
+After preparing the holdout data simply apply the model:
+
+    >>> df_holdout = pd.read_csv('../data/brain_volumes_holdout.csv')
+    >>> my_holdout_data = np.array(df_holdout)
+    >>> covars = pd.read_csv('subject_info_holdout.csv')
+    >>> my_holdout_data_adj = harmonizationApply(my_holdout_data, covars, my_model)
 
 Specifying Nonlinear Covariate Effects
 --------------------------------------
 
-Optional argument: ``smooth_terms``
+You may specify nonlinear covariate effects with the optional argument:
+``smooth_terms``. For example, you may want to specify age as a nonlinear
+term in the harmonization model. This can be done easily with
+``harmonizationLearn``:
 
-*Warning:* you cannot apply a nonlinear model to out-of-sample data if the
+    >>> from neuroHarmonize import harmonizationLearn
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> # load your data and all numeric covariates
+    >>> my_data = pd.read_csv('brain_volumes.csv')
+    >>> my_data = np.array(my_data)
+    >>> covars = pd.read_csv('subject_info.csv')
+    >>> # run harmonization with NONLINEAR effects of age
+    >>> my_model, my_data_adj = harmonizationLearn(data, covars, smooth_terms=['AGE'])
+
+*Warning:* you cannot apply a pre-trained nonlinear model to new data if the
 range of the new data extends beyond the training data for any terms in
 ``smooth_terms``. This is due to a documented issue:
 https://github.com/statsmodels/statsmodels/issues/2361
