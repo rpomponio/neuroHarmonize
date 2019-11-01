@@ -101,7 +101,7 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
     # save model parameters in single object
     model = {'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
              'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
-             'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': LS_dict['delta_hat'],
+             'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
              'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
              'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
              'smooth_model': smooth_model}
