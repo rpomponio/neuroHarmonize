@@ -172,7 +172,7 @@ def saveHarmonizationModel(model, file_name):
         raise ValueError('Model file already exists: %s Change name or delete to save.' % file_name)
     # estimate size of out_file
     est_size = 0
-    for key in ['B_hat', 'grand_mean', 'var_pooled', 'gamma_star', 'delta_star']:
+    for key in ['B_hat', 'grand_mean', 'var_pooled', 'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
         est_size += model[key].nbytes / 1e6
     print('Saving model object, estimated size in MB: %4.2f' % est_size)
     out_file = open(file_name, 'wb')
