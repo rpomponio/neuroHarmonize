@@ -142,10 +142,12 @@ term in the harmonization model. This can be done easily with
     >>> # run harmonization with NONLINEAR effects of age
     >>> my_model, my_data_adj = harmonizationLearn(data, covars, smooth_terms=['AGE'])
 
-*Warning:* you cannot apply a pre-trained nonlinear model to new data if the
-range of the new data extends beyond the training data for any terms in
-``smooth_terms``. This is due to a documented issue:
-https://github.com/statsmodels/statsmodels/issues/2361
+When applying nonlinear models to holdout data, you may get an error: "some data
+points fall outside the outermost knots, and I'm not sure how to handle them".
+This is documented: https://github.com/statsmodels/statsmodels/issues/2361. 
+The current workaround is to use the optional argument: ``smooth_term_bounds``,
+which controls the boundary knots for nonlinear estimation. You should specify
+boundaries that contain the limits of the entire dataset, including holdout data.
 
 Working with NIFTI Images
 -------------------------

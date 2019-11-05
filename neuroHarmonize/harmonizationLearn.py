@@ -5,7 +5,7 @@ import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
-def harmonizationLearn(data, covars, smooth_terms=[]):
+def harmonizationLearn(data, covars, smooth_terms=[], smooth_term_bounds=(None, None)):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -26,12 +26,19 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
         if empty, ComBat is applied with a linear model of covariates
         if not empty, Generalized Additive Models (GAMs) are used
         will increase computation time due to search for optimal smoothing
-    
+        
+    smooth_term_bounds (Optional) : tuple of float, default (None, None)
+        feature to support custom boundaries of the smoothing terms
+        useful when holdout data covers different range than 
+        specify the bounds as (minimum, maximum)
+        currently not supported for models with mutliple smooth terms
+        
     Returns
     -------
     model : a dictionary of estimated model parameters
         design, s_data, stand_mean, var_pooled, B_hat, grand_mean,
-        gamma_star, delta_star, info_dict (a neuroCombat invention)
+        gamma_star, delta_star, info_dict (a neuroCombat invention),
+        gamma_hat, delta_hat, gamma_bar, t2, a_prior, b_prior, smooth_model
     
     bayes_data : a numpy array
         harmonized data, dimensions are N_samples x N_features
@@ -72,7 +79,8 @@ def harmonizationLearn(data, covars, smooth_terms=[]):
     if smooth_model['perform_smoothing']:
         # create cubic spline basis for smooth terms
         X_spline = covars[:, smooth_cols].astype(float)
-        bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols))
+        bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols),
+                      knot_kwds=[{'lower_bound':smooth_term_bounds[0], 'upper_bound':smooth_term_bounds[1]}])
         # construct formula and dataframe required for gam
         formula = 'y ~ '
         df_gam = {}
