@@ -99,6 +99,9 @@ Example usage:
     >>> # run harmonization and store the adjusted data
     >>> my_model, my_data_adj = harmonizationLearn(my_data, covars)
 
+If you wish to skip the empirical Bayes step of ComBat, simply pass the optional
+argument ``eb=False`` to ``harmonizationLearn``.
+
 Applying Pre-Trained Models to New Data
 ---------------------------------------
 

@@ -5,7 +5,7 @@ import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
-def harmonizationLearn(data, covars, smooth_terms=[], smooth_term_bounds=(None, None)):
+def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bounds=(None, None)):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -19,6 +19,9 @@ def harmonizationLearn(data, covars, smooth_terms=[], smooth_term_bounds=(None, 
         all covariates must be encoded numerically (no categorical variables)
         must contain a single column "SITE" with site labels for ComBat
         dimensions are N_samples x (N_covariates + 1)
+        
+    eb : bool, default True
+        whether to use empirical Bayes estimates of site effects
         
     smooth_terms (Optional) :  a list, default []
         names of columns in covars to include as smooth, nonlinear terms
@@ -104,7 +107,12 @@ def harmonizationLearn(data, covars, smooth_terms=[], smooth_term_bounds=(None, 
     s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(
         data, design, info_dict, smooth_model)
     LS_dict = fit_LS_model_and_find_priors(s_data, design, info_dict)
-    gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
+    # optional: avoid EB estimates
+    if eb:
+        gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
+    else:
+        gamma_star = LS_dict['gamma_hat']
+        delta_star = np.array(LS_dict['delta_hat'])
     bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
     # save model parameters in single object
     model = {'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
@@ -112,7 +120,7 @@ def harmonizationLearn(data, covars, smooth_terms=[], smooth_term_bounds=(None, 
              'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
              'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
              'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
-             'smooth_model': smooth_model}
+             'smooth_model': smooth_model, 'eb': eb}
     # transpose data to return to original shape
     bayes_data = bayes_data.T
     
