@@ -39,9 +39,9 @@ Option 1: Install from PyPI (recommended)
 
 Option 2: Install from GitHub
 
-**1. Install developer version of ``statsmodels``**
+**1. Install developer version of** ``statsmodels``
 
-*Warning:* This package depends on a developer version of ``statsmodels``. Until
+This package depends on a developer version of ``statsmodels``. Until
 a newer version of ``statsmodels`` is released, the current workaround is to run
 the following in the command line:
 
