@@ -2,18 +2,18 @@
 neuroHarmonize
 ==============
 
-Harmonization tools for multi-site neuroimaging analysis.
+Harmonization tools for multi-site neuroimaging analysis. Part of the work reported in our first paper with data from the iSTAGING consoritum [1]_. 
 
 Overview
 ---------
 
-This package extends the functionality of the package developed by Nick Cullen [1]_,
+This package extends the functionality of the package developed by Nick Cullen [2]_,
 ``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
 (to make installation easier, ``neuroCombat`` is not a dependency for this package,
 but the source code is included to call ``neuroCombat`` functions).
 
 ``neuroCombat`` allows the user to perform a harmonization procedure using
-the ComBat [2]_ algorithm for correcting multi-site data.
+the ComBat [3]_ algorithm for correcting multi-site data.
 
 ``neuroHarmonize`` is a package with similar functionality, but also allows the
 user to perform the following additional procedures:
@@ -35,9 +35,11 @@ Installation
 
 Option 1: Install from PyPI (recommended)
 
-*instructions will be written once package is released*
+*instructions will be written once package is released on PyPI*
 
 Option 2: Install from GitHub
+
+1. Install developer version of ``statsmodels``
 
 *Warning:* This package depends on a developer version of ``statsmodels``. Until
 a newer version of ``statsmodels`` is released, the current workaround is to run
@@ -45,12 +47,10 @@ the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
 
-Download the zipped repository on GitHub: https://github.com/rpomponio/neuroHarmonize
+2. Download the zipped repository on GitHub: https://github.com/rpomponio/neuroHarmonize
 
-Unzip the download. Navigate to the directory neuroHarmonize-master/ which is
-probably in your downloads folder.
-
-Open a terminal and run:
+3. Unzip the download. Navigate to the directory neuroHarmonize-master/ which is
+probably in your downloads folder. Open a terminal and run:
 
     >>> pip install .
 
@@ -155,17 +155,21 @@ boundaries that contain the limits of the entire dataset, including holdout data
 Working with NIFTI Images
 -------------------------
 
-*In development*
+*This feature is currently in development*
 
 Citations
 ---------
 
-.. [1] Fortin, J. P., N. Cullen, Y. I. Sheline, W. D. Taylor, I. Aselcioglu,
+.. [1] Pomponio, R., Shou, H., Davatzikos, C., et al., (2019).
+   "Harmonization of large MRI datasets for the analysis of brain imaging
+   patterns throughout the lifespan." Neuroimage 208.
+   https://doi.org/10.1016/j.neuroimage.2019.116450.
+.. [2] Fortin, J. P., N. Cullen, Y. I. Sheline, W. D. Taylor, I. Aselcioglu,
    P. A. Cook, P. Adams, C. Cooper, M. Fava, P. J. McGrath, M. McInnis,
    M. L. Phillips, M. H. Trivedi, M. M. Weissman and R. T. Shinohara (2017).
    "Harmonization of cortical thickness measurements across scanners and sites."
    Neuroimage 167: 104-120. https://doi.org/10.1016/j.neuroimage.2017.11.024.
-.. [2] W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray
+.. [3] W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray
    expression data using empirical Bayes methods. Biostatistics, 8(1):118-127,
    2007. https://doi.org/10.1093/biostatistics/kxj037.
 
