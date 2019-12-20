@@ -39,7 +39,7 @@ Option 1: Install from PyPI (recommended)
 
 Option 2: Install from GitHub
 
-1. Install developer version of ``statsmodels``
+**1. Install developer version of ``statsmodels``**
 
 *Warning:* This package depends on a developer version of ``statsmodels``. Until
 a newer version of ``statsmodels`` is released, the current workaround is to run
@@ -47,9 +47,11 @@ the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
 
-2. Download the zipped repository on GitHub: https://github.com/rpomponio/neuroHarmonize
+**2. Download the zipped repository on GitHub:** https://github.com/rpomponio/neuroHarmonize
 
-3. Unzip the download. Navigate to the directory neuroHarmonize-master/ which is
+**3. Unzip the download.**
+
+Navigate to the directory neuroHarmonize-master/ which is
 probably in your downloads folder. Open a terminal and run:
 
     >>> pip install .
