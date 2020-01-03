@@ -6,7 +6,7 @@ from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
-                       smooth_term_bounds=(None, None), keep_s_data=False):
+                       smooth_term_bounds=(None, None), return_s_data=False):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -37,19 +37,22 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         specify the bounds as (minimum, maximum)
         currently not supported for models with mutliple smooth terms
         
-    keep_s_data (Optional) : bool, default False
+    return_s_data (Optional) : bool, default False
         whether to return s_data, the standardized data array
         can be useful for diagnostics but will be costly to save/load if large
         
     Returns
     -------
     model : a dictionary of estimated model parameters
-        design, s_data (if specified), var_pooled, B_hat, grand_mean,
+        design, var_pooled, B_hat, grand_mean,
         gamma_star, delta_star, info_dict (a neuroCombat invention),
         gamma_hat, delta_hat, gamma_bar, t2, a_prior, b_prior, smooth_model
     
     bayes_data : a numpy array
         harmonized data, dimensions are N_samples x N_features
+        
+    s_data (Optional) : a numpy array
+        if return_s_data=True
     
     """
     # transpose data as per ComBat convention
@@ -127,12 +130,13 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
              'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
              'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
              'smooth_model': smooth_model, 'eb': eb}
-    if keep_s_data:
-        model['s_data'] = s_data
     # transpose data to return to original shape
     bayes_data = bayes_data.T
     
-    return model, bayes_data
+    if return_s_data:
+        return model, bayes_data, s_data
+    else:
+        return model, bayes_data
 
 def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
     """
@@ -199,8 +203,6 @@ def saveHarmonizationModel(model, file_name):
     for key in ['design', 'B_hat', 'grand_mean', 'var_pooled',
                 'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
         est_size += model[key].nbytes / 1e6
-    if 's_data' in model.keys():
-        est_size += model['s_data'].nbytes / 1e6
     print('Saving model object, estimated size in MB: %4.2f' % est_size)
     out_file = open(file_name, 'wb')
     pickle.dump(model, out_file)
