@@ -5,7 +5,8 @@ import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
 
-def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bounds=(None, None)):
+def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
+                       smooth_term_bounds=(None, None), keep_s_data=False):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -36,10 +37,14 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bound
         specify the bounds as (minimum, maximum)
         currently not supported for models with mutliple smooth terms
         
+    keep_s_data (Optional) : bool, default False
+        whether to return s_data, the standardized data array
+        can be useful for diagnostics but will be costly to save/load if large
+        
     Returns
     -------
     model : a dictionary of estimated model parameters
-        design, s_data, stand_mean, var_pooled, B_hat, grand_mean,
+        design, s_data (if specified), var_pooled, B_hat, grand_mean,
         gamma_star, delta_star, info_dict (a neuroCombat invention),
         gamma_hat, delta_hat, gamma_bar, t2, a_prior, b_prior, smooth_model
     
@@ -115,12 +120,15 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bound
         delta_star = np.array(LS_dict['delta_hat'])
     bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
     # save model parameters in single object
-    model = {'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
+    model = {'design': design,
+             'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
              'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
              'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
              'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
              'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
              'smooth_model': smooth_model, 'eb': eb}
+    if keep_s_data:
+        model['s_data'] = s_data
     # transpose data to return to original shape
     bayes_data = bayes_data.T
     
@@ -188,8 +196,11 @@ def saveHarmonizationModel(model, file_name):
         raise ValueError('Model file already exists: %s Change name or delete to save.' % file_name)
     # estimate size of out_file
     est_size = 0
-    for key in ['B_hat', 'grand_mean', 'var_pooled', 'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
+    for key in ['design', 'B_hat', 'grand_mean', 'var_pooled',
+                'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
         est_size += model[key].nbytes / 1e6
+    if 's_data' in model.keys():
+        est_size += model['s_data'].nbytes / 1e6
     print('Saving model object, estimated size in MB: %4.2f' % est_size)
     out_file = open(file_name, 'wb')
     pickle.dump(model, out_file)
