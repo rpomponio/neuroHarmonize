@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
-from .neuroCombat import make_design_matrix, fit_LS_model_and_find_priors, find_parametric_adjustments, adjust_data_final
+from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                        smooth_term_bounds=(None, None), return_s_data=False):
@@ -114,7 +114,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     # run steps to perform ComBat
     s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(
         data, design, info_dict, smooth_model)
-    LS_dict = fit_LS_model_and_find_priors(s_data, design, info_dict)
+    LS_dict = fitLSModelAndFindPriors(s_data, design, info_dict, eb=eb)
     # optional: avoid EB estimates
     if eb:
         gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
@@ -187,6 +187,49 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
     return s_data, stand_mean, var_pooled, B_hat, grand_mean
+
+def fitLSModelAndFindPriors(s_data, design, info_dict, eb=True):
+    """
+    The original neuroCombat function fit_LS_model_and_find_priors plus
+    necessary modifications.
+    
+    This function will return no EB information if eb=False
+    """
+    n_batch = info_dict['n_batch']
+    batch_info = info_dict['batch_info'] 
+    
+    batch_design = design[:,:n_batch]
+    gamma_hat = np.dot(np.dot(la.inv(np.dot(batch_design.T, batch_design)), batch_design.T), s_data.T)
+
+    delta_hat = []
+    for i, batch_idxs in enumerate(batch_info):
+        delta_hat.append(np.var(s_data[:,batch_idxs],axis=1,ddof=1))
+    
+    if eb:
+        gamma_bar = np.mean(gamma_hat, axis=1) 
+        t2 = np.var(gamma_hat,axis=1, ddof=1)
+
+        a_prior = list(map(aprior, delta_hat))
+        b_prior = list(map(bprior, delta_hat))
+
+        LS_dict = {}
+        LS_dict['gamma_hat'] = gamma_hat
+        LS_dict['delta_hat'] = delta_hat
+        LS_dict['gamma_bar'] = gamma_bar
+        LS_dict['t2'] = t2
+        LS_dict['a_prior'] = a_prior
+        LS_dict['b_prior'] = b_prior
+        return LS_dict
+    else:
+        LS_dict = {}
+        LS_dict['gamma_hat'] = gamma_hat
+        LS_dict['delta_hat'] = delta_hat
+        LS_dict['gamma_bar'] = None
+        LS_dict['t2'] = None
+        LS_dict['a_prior'] = None
+        LS_dict['b_prior'] = None
+        return LS_dict
+
 
 def saveHarmonizationModel(model, file_name):
     """
