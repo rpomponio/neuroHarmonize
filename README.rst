@@ -29,6 +29,7 @@ user to perform the following additional procedures:
    memory capacity. In such cases, it is still possible to harmonize images by
    sequentially adjusting images one-by-one. This functionality is made
    available via the ``nibabel`` package.
+4. Train a harmonization model without the empirical Bayes (EB) step of ComBat.
 
 Installation
 ------------
@@ -128,6 +129,16 @@ After preparing the holdout data simply apply the model:
     >>> my_holdout_data = np.array(df_holdout)
     >>> covars = pd.read_csv('subject_info_holdout.csv')
     >>> my_holdout_data_adj = harmonizationApply(my_holdout_data, covars, my_model)
+
+Empirical Bayes
+---------------
+
+Note the default behavior is to run the empirical Bayes (EB) step of ComBat, which
+is useful for harmonizing multiple features that are similar such as genes or
+brain regional volumes.
+
+To run without EB, specify ``eb=False`` in ``harmonizationLearn``. This is
+convenient when harmonizing a small number of features, e.g. fewer than 10.
 
 Specifying Nonlinear Covariate Effects
 --------------------------------------

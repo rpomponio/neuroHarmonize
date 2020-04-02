@@ -199,7 +199,7 @@ def fitLSModelAndFindPriors(s_data, design, info_dict, eb=True):
     batch_info = info_dict['batch_info'] 
     
     batch_design = design[:,:n_batch]
-    gamma_hat = np.dot(np.dot(la.inv(np.dot(batch_design.T, batch_design)), batch_design.T), s_data.T)
+    gamma_hat = np.dot(np.dot(np.linalg.inv(np.dot(batch_design.T, batch_design)), batch_design.T), s_data.T)
 
     delta_hat = []
     for i, batch_idxs in enumerate(batch_info):
