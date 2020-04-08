@@ -51,7 +51,7 @@ Requirements:
     
 2. Install latest version of ``neuroHarmonize``. Run the following in the command line:
 
-   >>> pip install git+https://github.com/rpomponio/neuroHarmonize
+    >>> pip install git+https://github.com/rpomponio/neuroHarmonize
 
 Quick Start
 -----------
