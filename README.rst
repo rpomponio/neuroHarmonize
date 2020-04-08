@@ -34,28 +34,24 @@ user to perform the following additional procedures:
 Installation
 ------------
 
-Option 1: Install from PyPI (recommended)
+Requirements:
+
+* ``git >= 2.17.2``
+* ``python >= 3.7.6``
+
+**Option 1: Install from PyPI (recommended)**
 
 *instructions will be written once package is released on PyPI*
 
-Option 2: Install from GitHub
+**Option 2: Install from GitHub**
 
-**1. Install developer version of** ``statsmodels``
-
-This package depends on a developer version of ``statsmodels``. Until
-a newer version of ``statsmodels`` is released, the current workaround is to run
-the following in the command line:
+1. Install developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released, the current workaround is to run the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
+    
+2. Install latest version of ``neuroHarmonize``. Run the following in the command line:
 
-**2. Download the zipped repository on GitHub:** https://github.com/rpomponio/neuroHarmonize
-
-**3. Unzip the download.**
-
-Navigate to the directory neuroHarmonize-master/ which is
-probably in your downloads folder. Open a terminal and run:
-
-    >>> pip install .
+   >>> pip install git+https://github.com/rpomponio/neuroHarmonize
 
 Quick Start
 -----------
