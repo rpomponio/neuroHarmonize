@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
-from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final
+from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                        smooth_term_bounds=(None, None), return_s_data=False):
