@@ -159,7 +159,7 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
         
         if X.shape[0] > 10:
             print('\nWARNING: more than 10 variables will be harmonized with smoothing model.')
-            print(' Computation will take some time. For linear model (faster) remove arg: smooth_terms.')
+            print(' Computation may take several minutes.')
         # initialize penalization weight (not the final weight)
         alpha = np.array([1.0] * len(smooth_cols))
         # initialize an empty matrix for beta
@@ -169,8 +169,9 @@ def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
             df_gam.loc[:, 'y'] = X[i, :]
             gam_bs = GLMGam.from_formula(formula, data=df_gam, smoother=bs, alpha=alpha)
             res_bs = gam_bs.fit()
-            # Optimal penalization weights alpha can be obtained through gcv
-            gam_bs.alpha = gam_bs.select_penweight()[0]
+            # Optimal penalization weights alpha can be obtained through gcv/kfold
+            # Note: kfold is faster, gcv is more robust
+            gam_bs.alpha = gam_bs.select_penweight_kfold()[0]
             res_bs_optim = gam_bs.fit()
             B_hat[:, i] = res_bs_optim.params
     ###
