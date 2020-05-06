@@ -2,25 +2,26 @@
 neuroHarmonize
 ==============
 
-Harmonization tools for multi-site neuroimaging analysis. Part of the work reported in our first paper with data from the iSTAGING consoritum [1]_. 
+Harmonization tools for multi-site neuroimaging analysis. Part of the work
+reported in our first paper with data from the ISTAGING consoritum [1]_.
 
 Overview
 ---------
 
 This package extends the functionality of the package developed by Nick Cullen [2]_,
 ``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
-(to make installation easier, ``neuroCombat`` is not a dependency for this package,
-but the source code is included to call ``neuroCombat`` functions).
 
-``neuroCombat`` allows the user to perform a harmonization procedure using
-the ComBat [3]_ algorithm for correcting multi-site data.
+The previously-released package, ``neuroCombat``, allows the user to perform a
+harmonization procedure using the ComBat [3]_ algorithm for correcting
+multi-site data.
 
-``neuroHarmonize`` is a package with similar functionality, but also allows the
-user to perform the following additional procedures:
+This package, ``neuroHarmonize``, has similar functionality, but also allows the
+user to perform additional procedures:
 
 1. Train a harmonization model on a subset of data, then apply the model to the
    new set. For example, in longitudinal analyses, one may wish to train a
-   harmonization model on baseline cases and apply the model to follow-up cases.
+   harmonization model on baseline cases and apply the model to follow-up cases,
+   to avoid double-counting subjects.
 2. Specify covariates with nonlinear effects. Age tends to exhibit nonlinear
    relationships with brain volumes. Nonlinear effects are implemented using
    Generalized Additive Models (GAMs) via the ``statsmodels`` package.
@@ -34,18 +35,24 @@ user to perform the following additional procedures:
 Installation
 ------------
 
+Latest version: ``0.3.1`` (April 2020)
+
 Requirements:
 
 * ``git >= 2.17.2``
 * ``python >= 3.7.6``
 
-**Option 1: Install from PyPI (recommended)**
+*To make installation easier, neuroCombat is not a formal dependency for this
+package, but the source code is included to call neuroCombat functions.*
 
-*instructions will be written once package is released on PyPI*
+**Option 1: Install from PyPI (not available yet)**
+
+*Instructions will be written once package is released on PyPI. The package
+cannot be released on PyPI until a developer version of statsmodels is released.*
 
 **Option 2: Install from GitHub**
 
-1. Install developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released, the current workaround is to run the following in the command line:
+1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released, the current workaround is to run the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
     
@@ -66,12 +73,14 @@ features to be harmonized. For example, an array of brain volumes:
          ...,
          [1119.6, 1071.6,  ..., 326.6]])
          
-The dimensionality of this matrix must be: N_samples x N_features.
+The dimensionality of this matrix must be: **N_samples x N_features**
 
-You must also provide a **covariate matrix** which is a ``pandas`` DataFrame
-containing covariates to control for during harmonization. All covariates must
-be encoded numerically (no categorical covariates allowed). The DataFrame must
-also contain a single column "SITE" with labels for ComBat to identify sites.
+You must also provide a **covariate matrix** which is a ``pandas.DataFrame`` 
+containing all covariates to control for during harmonization. All covariates
+must be encoded numerically (you must handle categorical covariates in a
+pre-processing step, see ``pandas.get_dummies``). The ``DataFrame`` must
+also contain a single column called "SITE" with labels that identify sites
+(the labels in "SITE" need not be numeric).
 
 ::
 
@@ -82,6 +91,7 @@ also contain a single column "SITE" with labels for ComBat to identify sites.
   ...   ...   ...    ...
   9  SITE_B  82.1      0
   
+The dimensionality of this dataframe must be: **N_samples x N_Covariates**
 
 After preparing both inputs, you can call ``harmonizationLearn`` to harmonize
 the provided dataset.
@@ -117,7 +127,8 @@ First load the model:
 
 Next, prepare the holdout data on which you will apply the model. This data
 must look exactly like the training data for ``harmonizationLearn``, including
-the same number and order of covariates.
+the same number and order of covariates. If the holdout data contains a
+different number of sites, an error will be thrown.
 
 After preparing the holdout data simply apply the model:
 
@@ -164,7 +175,7 @@ boundaries that contain the limits of the entire dataset, including holdout data
 Working with NIFTI Images
 -------------------------
 
-*This feature is currently in development*
+*This feature is currently in development.*
 
 Citations
 ---------
