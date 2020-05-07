@@ -63,8 +63,8 @@ cannot be released on PyPI until a developer version of statsmodels is released.
 Quick Start
 -----------
 
-You must provide a **data matrix** which is a ``numpy`` array containing the
-features to be harmonized. For example, an array of brain volumes:
+You must provide a **data matrix** which is a ``numpy.array`` containing the
+features to be harmonized. For example, an ``array`` of brain volumes:
 
 ::
   
@@ -92,6 +92,9 @@ also contain a single column called "SITE" with labels that identify sites
   9  SITE_B  82.1      0
   
 The dimensionality of this dataframe must be: **N_samples x N_Covariates**
+
+The order of samples must be identical in the **covariate_matrix** and the
+**data_matrix**.
 
 After preparing both inputs, you can call ``harmonizationLearn`` to harmonize
 the provided dataset.
