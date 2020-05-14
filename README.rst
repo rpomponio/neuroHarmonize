@@ -180,6 +180,25 @@ Working with NIFTI Images
 
 *This feature is currently in development.*
 
+Visualize Fits of EB Priors
+---------------------------
+
+When ``eb=True``, ComBat uses Empirical Bayes to fit a prior distribution for
+the site effects for each site. You may wish to visualize fit of the prior
+distribution, along with the observed distribution of site effects. The following
+code example plots both distributions for the location effect of site 1.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import seaborn as sns
+    >>> from neuroHarmonize import loadHarmonizationModel
+    >>> model = loadHarmonizationModel('../models/my_model')
+    >>> site_01 = stats.norm.rvs(size=10000, loc=model['gamma_bar'][0], scale=np.sqrt(model['t2'][0]))
+    >>> sns.kdeplot(site_01, color='blue', label='Site-1-prior')
+    >>> sns.kdeplot(model['gamma_hat'][0, :], color='blue', label='Site-1-observed', linestyle='--')
+    >>> plt.show()
+
+.. image:: figure_1.png
+
 Citations
 ---------
 
