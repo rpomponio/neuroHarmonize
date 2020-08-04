@@ -32,10 +32,14 @@ user to perform additional procedures:
    available via the ``nibabel`` package.
 4. Train a harmonization model without the empirical Bayes (EB) step of ComBat.
 
+*Note: Biological covariate effects are modeled but not explicitly removed, as
+per the original formulation of ComBat. Removing covariate effects can be
+achieved with an external model, or by using the argument* `return_s_data`
+
 Installation
 ------------
 
-Latest version: ``0.3.2`` (August 2020)
+Latest version: ``0.3.2`` (July 2020)
 
 Requirements:
 
