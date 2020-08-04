@@ -35,12 +35,12 @@ user to perform additional procedures:
 Installation
 ------------
 
-Latest version: ``0.3.1`` (April 2020)
+Latest version: ``0.3.2`` (August 2020)
 
 Requirements:
 
 * ``git >= 2.17.2``
-* ``python >= 3.7.6``
+* ``python >= 3.6.8``
 
 *To make installation easier, neuroCombat is not a formal dependency for this
 package, but the source code is included to call neuroCombat functions.*
