@@ -134,7 +134,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     bayes_data = bayes_data.T
     
     if return_s_data:
-        return model, bayes_data, s_data
+        return model, bayes_data, s_data.T
     else:
         return model, bayes_data
 
