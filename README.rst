@@ -5,6 +5,8 @@ neuroHarmonize
 Harmonization tools for multi-site neuroimaging analysis. Part of the work
 reported in our first paper with data from the ISTAGING consoritum [1]_.
 
+contact: raymond (dot) pomponio (at) outlook (dot) com
+
 Overview
 ---------
 
