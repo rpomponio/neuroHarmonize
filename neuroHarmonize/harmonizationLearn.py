@@ -49,10 +49,12 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         gamma_hat, delta_hat, gamma_bar, t2, a_prior, b_prior, smooth_model
     
     bayes_data : a numpy array
-        harmonized data, dimensions are N_samples x N_features
-        
+        harmonized data, corrected for effects of SITE
+        dimensions are N_samples x N_features
+
     s_data (Optional) : a numpy array
-        if return_s_data=True
+        harmonized data, corrected for all covariates
+        set return_s_data=True to output the variable
     
     """
     # transpose data as per ComBat convention
