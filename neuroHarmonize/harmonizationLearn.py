@@ -115,7 +115,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         smooth_model['df_gam'] = df_gam
     ###
     # run steps to perform ComBat
-    s_data, stand_mean, var_pooled, B_hat, grand_mean = StandardizeAcrossFeatures(
+    s_data, stand_mean, var_pooled, B_hat, grand_mean = standardizeAcrossFeatures(
         data, design, info_dict, smooth_model)
     LS_dict = fitLSModelAndFindPriors(s_data, design, info_dict, eb=eb)
     # optional: avoid EB estimates
@@ -141,7 +141,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     else:
         return model, bayes_data
 
-def StandardizeAcrossFeatures(X, design, info_dict, smooth_model):
+def standardizeAcrossFeatures(X, design, info_dict, smooth_model):
     """
     The original neuroCombat function standardize_across_features plus
     necessary modifications.

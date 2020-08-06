@@ -2,8 +2,8 @@ import os
 import nibabel as nib
 import numpy as np
 import pandas as pd
+from .harmonizationApply import applyModelOne
 
-# define function to make mask based on list of image paths
 def create_NIFTI_mask(paths, threshold=0.0, output_path='thresholded_mask.nii.gz'):
     """
     Creates a binary mask from a list of NIFTI images. Image intensities will be
@@ -61,7 +61,6 @@ def create_NIFTI_mask(paths, threshold=0.0, output_path='thresholded_mask.nii.gz
     img.to_filename(output_path)
     return nifti_avg, nifti_mask, affine_0
 
-# define function to flatten images and store array
 def flatten_NIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     """
     Flattens a dataset of NIFTI images to a 2D array.
