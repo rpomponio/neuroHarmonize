@@ -3,46 +3,50 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
-def create_NIFTI_mask(file_paths, threshold=0.0, output_path='thresholded_mask.nii.gz'):
+# define function to make mask based on list of image paths
+def create_NIFTI_mask(paths, threshold=0.0, output_path='thresholded_mask.nii.gz'):
     """
-    Utility function for loading multiple NIFTI images and vectorizing for
-    harmonization. All images must have the same dimensions and orientation.
+    Creates a binary mask from a list of NIFTI images. Image intensities will be
+    averaged, then thresholded across the entire dataset. Result will have the
+    same affine matrix as the first image in the dataset.
     
     Arguments
     ---------
-    file_paths : a pandas DataFrame
-        list of file paths (absolute or relative) for each NIFTI image
-        must contain a single column "PATH" with file paths
+    paths : a pandas DataFrame
+        must contain a single column "PATH" with file paths to NIFTIs
+        dimensions must be identical for all images
     
-    threshold : float, default 1.0
-        determines the threshold value below which voxel intensities will be
-            masked, or excluded
-        images in file_paths are averaged and a mask is created for all voxels
-            with average intensities > threshold
-
+    threshold : a float, default 0.0
+        the threshold at which to binarize the mask
+        average intensity must be greater than threshold to be included in mask
+        
     output_path : str, default "thresholded_mask.nii.gz"
-        desired output path for the image mask
+        the output file path, must include extension (.nii.gz)
         
     Returns
     -------
     nifti_avg : a numpy array
-        average image intensities, dimensions are same as input images
+        array of average image intensities
+        dimensions are identical to images in `paths`
     
     nifti_mask : a numpy array
-        mask of voxels included in data_array
-        dimensions are same as input images
-        1=included, 0=excluded/masked
+        array of binarized mask (1=include, 0=exclude)
+        dimensions are identical to images in `paths`
+
+    affine : a numpy array
+        affine matrix used to save mask
     
     """
     # count number of images
-    n_images = file_paths.shape[0]
+    n_images = paths.shape[0]
     # begin summing image intensities
     i = 0
-    nifti_i = nib.load(file_paths.PATH[i])
+    nifti_i = nib.load(paths.PATH[i])
+    affine_0 = nifti_i.affine
     nifti_sum = nifti_i.get_fdata()
     # iterate over all images
     for i in range(0, n_images):
-        nifti_i = nib.load(file_paths.PATH[i])
+        nifti_i = nib.load(paths.PATH[i])
         nifti_sum += nifti_i.get_fdata()
         if (i==500):
             print('PROGRESS: loaded %d of %d images...' % (i, n_images))
@@ -53,32 +57,46 @@ def create_NIFTI_mask(file_paths, threshold=0.0, output_path='thresholded_mask.n
     # create mask and save as NIFTI image
     nifti_mask = nifti_avg.copy()
     nifti_mask[nifti_mask>0.0] = 1.0
-    img = nib.Nifti1Image(nifti_mask, np.eye(4))
+    img = nib.Nifti1Image(nifti_mask, affine_0)
     img.to_filename(output_path)
-    return nifti_avg, nifti_mask
+    return nifti_avg, nifti_mask, affine_0
 
-def flatten_NIFTIs(file_paths, mask_path, output_path='flattened_nifti_array.npy'):
+# define function to flatten images and store array
+def flatten_NIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     """
-    mask must be created with create_NIFTI_mask()
+    Flattens a dataset of NIFTI images to a 2D array.
         
     Arguments
     ---------
-    file_paths : a pandas DataFrame
-        list of file paths (absolute or relative) for each NIFTI image
-        must contain a single column "PATH" with file paths
+    paths : a pandas DataFrame
+        must contain a single column "PATH" with file paths to NIFTIs
+        dimensions must be identical for all images
+
+    mask_path : a str
+        file path to the mask, must be created with `create_NIFTI_mask`
+
+    output_path : a str, default "flattened_NIFTI_array.npy"
+
+    Returns
+    -------
+    nifti_array : a numpy array
+        array of flattened image intensities
+        dimensions are N_Images x N_Masked_Voxels
 
     """
+    print('\nWARNING: this procedure will consume large amounts of memory.')
+    print(' Consider down-sampling, masking aggressively, and/or sub-sampling NIFTIs...')
     # load mask (1=GM tissue, 0=Non-GM)
     nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
     n_voxels_flattened = np.sum(nifti_mask)
     # count images
-    n_images = file_paths.shape[0]
+    n_images = paths.shape[0]
     # initialize empty container
     nifti_array = np.zeros((n_images, n_voxels_flattened))
     # iterate over images and fill container
     print('Flattening %d NIFTI images with %d voxels...' % (n_images, n_voxels_flattened))
     for i in range(0, n_images):
-        nifti_i = nib.load(file_paths.PATH[i]).get_fdata()
+        nifti_i = nib.load(paths.PATH[i]).get_fdata()
         nifti_array[i, :] = nifti_i[nifti_mask]
         if (i==500):
             print('PROGRESS: loaded %d of %d images...' % (i, n_images))

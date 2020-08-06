@@ -80,6 +80,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
+        'batch_labels': batch_levels,
         'batch_levels': batch_levels.astype('int'),
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
