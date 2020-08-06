@@ -61,6 +61,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     data = data.T
     # prep covariate data
     batch_col = covars.columns.get_loc('SITE')
+    batch_labels = np.unique(covars[:,batch_col]).copy()
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     smooth_cols = [covars.columns.get_loc(c) for c in covars.columns if c in smooth_terms]
@@ -75,7 +76,6 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     }
     covars = np.array(covars, dtype='object')
     ### additional setup code from neuroCombat implementation:
-    batch_labels = np.unique(covars[:,batch_col])
     # convert batch col to integer
     covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
     # create dictionary that stores batch info
