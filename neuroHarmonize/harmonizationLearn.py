@@ -75,12 +75,13 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     }
     covars = np.array(covars, dtype='object')
     ### additional setup code from neuroCombat implementation:
+    batch_labels = np.unique(covars[:,batch_col])
     # convert batch col to integer
     covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
-        'batch_labels': batch_levels,
+        'batch_labels': batch_labels,
         'batch_levels': batch_levels.astype('int'),
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
