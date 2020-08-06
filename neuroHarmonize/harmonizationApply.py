@@ -42,11 +42,13 @@ def harmonizationApply(data, covars, model):
     smooth_model = model['smooth_model']
     smooth_cols = smooth_model['smooth_cols']
     ### additional setup code from neuroCombat implementation:
+    batch_labels = np.unique(covars[:,batch_col])
     # convert batch col to integer
     covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
+        'batch_labels': batch_labels,
         'batch_levels': batch_levels.astype('int'),
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
@@ -58,6 +60,9 @@ def harmonizationApply(data, covars, model):
     check_sites = info_dict['n_batch']==model['info_dict']['n_batch']
     if not check_sites:
         raise ValueError('Number of sites in holdout data not identical to training data.')
+    check_sites = np.mean(info_dict['batch_labels']==model['info_dict']['batch_labels'])
+    if not check_sites==1:
+        raise ValueError('Labels of sites in holdout data not identical to training data.')
     # apply ComBat without re-learning model parameters
     design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
     ### additional setup if smoothing is performed

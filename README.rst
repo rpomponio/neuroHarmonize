@@ -41,7 +41,7 @@ achieved with an external model, or by using the argument* `return_s_data`
 Installation
 ------------
 
-Latest version: ``0.3.3`` (August 2020)
+Latest version: ``0.3.x`` (August 2020)
 
 Requirements:
 
