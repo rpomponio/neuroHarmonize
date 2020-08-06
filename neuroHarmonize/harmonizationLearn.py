@@ -60,8 +60,8 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     # transpose data as per ComBat convention
     data = data.T
     # prep covariate data
+    batch_labels = np.unique(covars.SITE)
     batch_col = covars.columns.get_loc('SITE')
-    batch_labels = np.unique(covars[:,batch_col]).copy()
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     smooth_cols = [covars.columns.get_loc(c) for c in covars.columns if c in smooth_terms]
@@ -81,7 +81,6 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
-        'batch_labels': batch_labels,
         'batch_levels': batch_levels.astype('int'),
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
@@ -127,7 +126,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         delta_star = np.array(LS_dict['delta_hat'])
     bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
     # save model parameters in single object
-    model = {'design': design,
+    model = {'design': design, 'SITE_labels': batch_labels,
              'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
              'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
              'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
