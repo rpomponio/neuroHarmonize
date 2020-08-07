@@ -143,11 +143,11 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
     # apply harmonization model
     for i in range(0, n_images):
         path_new = paths.PATH_NEW.values[i]
-        covars = covars.iloc[[i], :]
+        covars_i = covars.iloc[[i], :]
         nifti = nib.load(paths.PATH[i])
         nifti_array = nifti.get_fdata()[nifti_mask].reshape((1, n_voxels_flattened))
         affine = nifti.affine
-        nifti_array_adj = applyModelOne(nifti_array, covars, model)
+        nifti_array_adj = applyModelOne(nifti_array, covars_i, model)
         nifti_out = nifti_mask.astype(float).copy()
         nifti_out[nifti_mask] = nifti_array_adj[0, :]
         nifti_out = nib.Nifti1Image(nifti_out, affine)
