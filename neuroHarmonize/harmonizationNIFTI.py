@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from .harmonizationApply import applyModelOne
 
-def create_NIFTI_mask(paths, threshold=0.0, output_path='thresholded_mask.nii.gz'):
+def createMaskNIFTI(paths, threshold=0.0, output_path='thresholded_mask.nii.gz'):
     """
     Creates a binary mask from a list of NIFTI images. Image intensities will be
     averaged, then thresholded across the entire dataset. Result will have the
@@ -61,7 +61,7 @@ def create_NIFTI_mask(paths, threshold=0.0, output_path='thresholded_mask.nii.gz
     img.to_filename(output_path)
     return nifti_avg, nifti_mask, affine_0
 
-def flatten_NIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
+def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     """
     Flattens a dataset of NIFTI images to a 2D array.
         
