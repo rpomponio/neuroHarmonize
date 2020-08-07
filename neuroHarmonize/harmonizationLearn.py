@@ -161,8 +161,7 @@ def standardizeAcrossFeatures(X, design, info_dict, smooth_model):
         df_gam = smooth_model['df_gam']
         
         if X.shape[0] > 10:
-            print('\nWARNING: more than 10 variables will be harmonized with smoothing model.')
-            print(' Computation may take several minutes.')
+            print('\n[neuroHarmonize]: smoothing more than 10 variables may take several minutes of computation.')
         # initialize penalization weight (not the final weight)
         alpha = np.array([1.0] * len(smooth_cols))
         # initialize an empty matrix for beta
@@ -244,13 +243,13 @@ def saveHarmonizationModel(model, file_name):
     
     """
     if os.path.exists(file_name):
-        raise ValueError('Model file already exists: %s Change name or delete to save.' % file_name)
+        raise ValueError('Model file already exists: %s. Change name or delete to save.' % file_name)
     # estimate size of out_file
     est_size = 0
     for key in ['design', 'B_hat', 'grand_mean', 'var_pooled',
                 'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
         est_size += model[key].nbytes / 1e6
-    print('Saving model object, estimated size in MB: %4.2f' % est_size)
+    print('\n[neuroHarmonize]: Saving model object, estimated size in MB: %4.2f' % est_size)
     out_file = open(file_name, 'wb')
     pickle.dump(model, out_file)
     out_file.close()

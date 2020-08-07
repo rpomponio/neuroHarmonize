@@ -49,7 +49,7 @@ def createMaskNIFTI(paths, threshold=0.0, output_path='thresholded_mask.nii.gz')
         nifti_i = nib.load(paths.PATH[i])
         nifti_sum += nifti_i.get_fdata()
         if (i==500):
-            print('PROGRESS: loaded %d of %d images...' % (i, n_images))
+            print('\n[neuroHarmonize]: loaded %d of %d images...' % (i, n_images))
     # compute average intensities
     nifti_avg = nifti_sum / n_images    
     # apply threshold
@@ -72,7 +72,7 @@ def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
         dimensions must be identical for all images
 
     mask_path : a str
-        file path to the mask, must be created with `create_NIFTI_mask`
+        file path to the mask, must be created with `createMaskNIFTI`
 
     output_path : a str, default "flattened_NIFTI_array.npy"
 
@@ -83,8 +83,7 @@ def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
         dimensions are N_Images x N_Masked_Voxels
 
     """
-    print('\nWARNING: this procedure will consume large amounts of memory.')
-    print(' Consider down-sampling, masking aggressively, and/or sub-sampling NIFTIs...')
+    print('\n[neuroHarmonize]: Flattening NIFTIs will consume large amounts of memory. Down-sampling may help.')
     # load mask (1=GM tissue, 0=Non-GM)
     nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
     n_voxels_flattened = np.sum(nifti_mask)
@@ -93,14 +92,66 @@ def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     # initialize empty container
     nifti_array = np.zeros((n_images, n_voxels_flattened))
     # iterate over images and fill container
-    print('Flattening %d NIFTI images with %d voxels...' % (n_images, n_voxels_flattened))
+    print('\n[neuroHarmonize]: Flattening %d NIFTI images with %d voxels...' % (n_images, n_voxels_flattened))
     for i in range(0, n_images):
         nifti_i = nib.load(paths.PATH[i]).get_fdata()
         nifti_array[i, :] = nifti_i[nifti_mask]
         if (i==500):
-            print('PROGRESS: loaded %d of %d images...' % (i, n_images))
+            print('\n[neuroHarmonize]: loaded %d of %d images...' % (i, n_images))
     # save array of flattened images
-    print('Size of array in MB: %2.3f' % (nifti_array.nbytes / 1e6))
+    print('\n[neuroHarmonize]: Size of array in MB: %2.3f' % (nifti_array.nbytes / 1e6))
     np.save(output_path, nifti_array)
     return nifti_array   
 
+def applyModelNIFTIs(covars, model, paths, mask_path):
+    """
+    Applies harmonization model sequentially to NIFTI images. This function
+    will reduce burden on memory resources for large datasets.
+        
+    Arguments
+    ---------
+    covars : a pandas DataFrame 
+        contains covariates to control for during harmonization
+        all covariates must be encoded numerically (no categorical variables)
+        must contain a single column "SITE" with site labels for ComBat
+        dimensions are N_samples x (N_covariates + 1)
+
+    model : a dictionary of model parameters
+        the output of a call to `harmonizationLearn`
+
+    paths : a pandas DataFrame
+        must contain a column "PATH" with file paths to NIFTIs and must also
+        contain a column "PATH_NEW" with file paths to the new NIFTIS that
+        will be created with this function
+        dimensions must be identical for all images
+
+    mask_path : a str
+        file path to the mask, must be created with `createMaskNIFTI`
+
+    Returns
+    -------
+    affine : a numpy array
+        affine matrix used to save mask
+    """
+    # load mask (1=include, 0=exclude)
+    nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
+    n_voxels_flattened = np.sum(nifti_mask)
+    # count number of images
+    n_images = paths.shape[0]
+    # begin loading images
+    affine_0 = nib.load(paths.PATH[0]).affine
+    # apply harmonization model
+    for i in range(0, n_images):
+        path_new = paths.PATH_NEW.values[i]
+        covars = covars.iloc[[i], :]
+        nifti = nib.load(paths.PATH[i])
+        nifti_array = nifti.get_fdata()[nifti_mask].reshape((1, n_voxels_flattened))
+        affine = nifti.affine
+        nifti_array_adj = applyModelOne(nifti_array, covars, model)
+        nifti_out = nifti_mask.astype(float).copy()
+        nifti_out[nifti_mask] = nifti_array_adj[0, :]
+        nifti_out = nib.Nifti1Image(nifti_out, affine)
+        nifti_out.to_filename(path_new)
+        if (i==500):
+            print('\n[neuroHarmonize]: saved %d of %d images...' % (i, n_images))
+    return None

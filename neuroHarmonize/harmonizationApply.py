@@ -58,10 +58,10 @@ def harmonizationApply(data, covars, model):
     # check sites are identical in training dataset
     check_sites = info_dict['n_batch']==model['info_dict']['n_batch']
     if not check_sites:
-        raise ValueError('Number of sites in holdout data not identical to training data.')
+        raise ValueError('Number of sites in holdout data not identical to training data. Check `covars` argument.')
     check_sites = np.mean(batch_labels==model['SITE_labels'])
     if check_sites!=1:
-        raise ValueError('Labels of sites in holdout data not identical to training data.')
+        raise ValueError('Labels of sites in holdout data not identical to training data. Check values in "SITE" column.')
     # apply ComBat without re-learning model parameters
     design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
     ### additional setup if smoothing is performed
@@ -84,7 +84,7 @@ def harmonizationApply(data, covars, model):
         # check formulas are identical in training dataset
         check_formula = formula==smooth_model['formula']
         if not check_formula:
-            raise ValueError('GAM formula for holdout data not identical to training data.')
+            raise ValueError('GAM formula for holdout data not identical to training data. Check arguments.')
         # for matrix operations, a modified design matrix is required
         design = np.concatenate((df_gam, bs_basis), axis=1)
     ###
@@ -134,6 +134,8 @@ def applyModelOne(data, covars, model):
     # prep covariate data
     batch_labels = model['SITE_labels']
     batch_i = covars.SITE.values[0]
+    if batch_i not in batch_labels:
+        raise ValueError('Site Label "%s" not in the training set. Check `covars` argument.' % batch_i)
     batch_level_i = np.argwhere(batch_i==batch_labels)[0]
     batch_col = covars.columns.get_loc('SITE')
     cat_cols = []
@@ -188,7 +190,7 @@ def loadHarmonizationModel(file_name):
     by file_name using the pickle package.
     """
     if not os.path.exists(file_name):
-        raise ValueError('Model file does not exist: %s' % file_name)
+        raise ValueError('Model file does not exist: %s. Did you run `saveHarmonizationModel`?' % file_name)
     in_file = open(file_name,'rb')
     model = pickle.load(in_file)
     in_file.close()
