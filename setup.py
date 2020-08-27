@@ -5,11 +5,11 @@ def readme():
         return f.read()
 
 setup(name='neuroHarmonize',
-      version='0.4.1',
+      version='1.0.0',
       description='Harmonization tools for multi-center neuroimaging studies.',
       long_description=readme(),
       url='https://github.com/rpomponio/neuroHarmonize',
-      author='Ray Pomponio',
+      author='Raymond Pomponio',
       author_email='raymond.pomponio@outlook.edu',
       license='MIT',
       packages=['neuroHarmonize'],

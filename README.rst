@@ -3,7 +3,7 @@ neuroHarmonize
 ==============
 
 Harmonization tools for multi-site neuroimaging analysis. Part of the work
-reported in our first paper with data from the ISTAGING consoritum [1]_.
+reported in our paper with data from the ISTAGING consoritum [1]_.
 
 contact: raymond (dot) pomponio (at) outlook (dot) com
 
@@ -13,35 +13,23 @@ Overview
 This package extends the functionality of the package developed by Nick Cullen [2]_,
 ``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
 
-The previously-released package, ``neuroCombat``, allows the user to perform a
+Cullen's package, ``neuroCombat``, allows the user to perform a
 harmonization procedure using the ComBat [3]_ algorithm for correcting
 multi-site data.
 
-This package, ``neuroHarmonize``, has similar functionality, but also allows the
-user to perform additional procedures:
+This package, ``neuroHarmonize``, provides similar functionality, with additional
+features:
 
-1. Train a harmonization model on a subset of data, then apply the model to the
-   new set. For example, in longitudinal analyses, one may wish to train a
-   harmonization model on baseline cases and apply the model to follow-up cases,
-   to avoid double-counting subjects.
-2. Specify covariates with nonlinear effects. Age tends to exhibit nonlinear
-   relationships with brain volumes. Nonlinear effects are implemented using
-   Generalized Additive Models (GAMs) via the ``statsmodels`` package.
-3. Apply a pre-trained harmonization model to NIFTI images. When performing
-   image-level harmonization, loading the entire set of images may exceed
-   memory capacity. In such cases, it is still possible to harmonize images by
-   sequentially adjusting images one-by-one. This functionality is made
-   available via the ``nibabel`` package.
-4. Train a harmonization model without the empirical Bayes (EB) step of ComBat.
-
-*Note: Biological covariate effects are modeled but not explicitly removed, as
-per the original formulation of ComBat. Removing covariate effects can be
-achieved with an external model, or by using the argument* `return_s_data`
+1. Support for working with NIFTI images. Implemented with the ``nibabel`` package.
+2. Separate train/test datasets.
+3. Specify covariates with generic nonlinear effects. Implemented using
+   Generalized Additive Models (GAMs) from the ``statsmodels`` package.
+4. Skip the empirical Bayes (EB) step of ComBat, if desired.
 
 Installation
 ------------
 
-Latest version: ``0.4.x`` (August 2020)
+Latest version: ``1.0.x`` (August 27, 2020)
 
 Requirements:
 
@@ -58,7 +46,7 @@ cannot be released on PyPI until a developer version of statsmodels is released.
 
 **Option 2: Install from GitHub**
 
-1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released, the current workaround is to run the following in the command line:
+1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released on PyPI, the current workaround is to run the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
     
@@ -68,6 +56,10 @@ cannot be released on PyPI until a developer version of statsmodels is released.
 
 Quick Start
 -----------
+
+*Please note that the ComBat [3]_ algorithm corrects for site effects but
+intentionally preserves covariate effects.* If you wish to remove covariate
+effects as well you can use the argument ``return_s_data``.
 
 You must provide a **data matrix** which is a ``numpy.array`` containing the
 features to be harmonized. For example, an ``array`` of brain volumes:
@@ -117,11 +109,52 @@ Example usage:
     >>> # run harmonization and store the adjusted data
     >>> my_model, my_data_adj = harmonizationLearn(my_data, covars)
 
-If you wish to skip the empirical Bayes step of ComBat, simply pass the optional
-argument ``eb=False`` to ``harmonizationLearn``.
+The dimensionality of the matrix ``my_data_adj`` will be identical to
+``my_data``: **N_samples x N_features**
+
+Working with NIFTI Images
+-------------------------
+
+To work with NIFTI images, you compute a mask using a ``pandas.DataFrame`` which
+contains file paths for all of the images in the **training set**.
+
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from neuroHarmonize.harmonizationNIFTI import createMaskNIFTI
+    >>> nifti_list = pd.read_csv('brain_images_paths.csv')
+    >>> nifti_avg, nifti_mask, affine = createMaskNIFTI(nifti_list, threshold=0)
+
+After the mask is created, you can flatten the images to a 2D ``numpy.array``
+very similar to what is done with the tabular data example above.
+
+    >>> from neuroHarmonize.harmonizationNIFTI import flattenNIFTIs
+    >>> nifti_array = flattenNIFTIs(nifti_list, 'thresholded_mask.nii.gz')
+
+The next step is identical to working with tabular data. You simply pass the 2D
+array to ``neuroHarmonize.harmonizationLearn``.
+
+    >>> import neuroHarmonize as nh
+    >>> covars = pd.read_csv('subject_info.csv')
+    >>> my_model, nifti_array_adj = nh.harmonizationLearn(nifti_array, covars)
+    >>> nh.saveHarmonizationModel(my_model, 'MY_MODEL')
+
+Lastly, you can apply the model sequentially to images in a larger dataset with
+``applyModelNIFTIs``. When performing NIFTI harmonization, loading the entire set
+of images may exceed memory capacity. This function will reduce the burden on
+memory by applying the model to images one-by-one and saving the results as NIFTIs. 
+
+    >>> from neuroHarmonize.harmonizationNIFTI import applyModelNIFTIs
+    >>> # load pre-trained model
+    >>> my_model = nh.loadHarmonizationModel('MY_MODEL')
+    >>> applyModelNIFTIs(covars, my_model, nifti_list, 'thresholded_mask.nii.gz')
 
 Applying Pre-Trained Models to New Data
 ---------------------------------------
+
+This feature allows you to train a harmonization model on a subset of data, then
+apply the model to the entire set. For example, in longitudinal analyses, one may
+wish to train a harmonization model on baseline cases and apply the model to
+follow-up cases, to avoid double-counting subjects.
 
 If you have previously trained a harmonization model with ``harmonizationLearn``,
 you may apply the model parameters to new data with ``harmonizationApply``.
@@ -146,23 +179,13 @@ After preparing the holdout data simply apply the model:
     >>> covars = pd.read_csv('subject_info_holdout.csv')
     >>> my_holdout_data_adj = harmonizationApply(my_holdout_data, covars, my_model)
 
-Empirical Bayes
----------------
-
-Note the default behavior is to run the empirical Bayes (EB) step of ComBat, which
-is useful for harmonizing multiple features that are similar such as genes or
-brain regional volumes.
-
-To run without EB, specify ``eb=False`` in ``harmonizationLearn``. This is
-convenient when harmonizing a small number of features, e.g. fewer than 10.
-
 Specifying Nonlinear Covariate Effects
 --------------------------------------
 
 You may specify nonlinear covariate effects with the optional argument:
 ``smooth_terms``. For example, you may want to specify age as a nonlinear
-term in the harmonization model. This can be done easily with
-``harmonizationLearn``:
+term in the harmonization model, if age exhibits nonlinear relationships with
+brain volumes. This can be done easily with ``harmonizationLearn``:
 
     >>> from neuroHarmonize import harmonizationLearn
     >>> import pandas as pd
@@ -181,15 +204,16 @@ The current workaround is to use the optional argument: ``smooth_term_bounds``,
 which controls the boundary knots for nonlinear estimation. You should specify
 boundaries that contain the limits of the entire dataset, including holdout data.
 
-Working with NIFTI Images
--------------------------
+Empirical Bayes
+---------------
 
-*This feature is currently in development.*
+Note the default behavior is to run the empirical Bayes (EB) step of ComBat, which
+is useful for harmonizing multiple features that are similar such as genes or
+brain regional volumes.
 
-    >>> from neuroHarmonize.harmonizationNIFTI import create_NIFTI_mask, flatten_NIFTIs
-
-Visualize Fits of EB Priors
----------------------------
+To run without EB, simply pass the optional argument ``eb=False`` to
+``harmonizationLearn``. This is convenient when harmonizing a small number of
+features, e.g. fewer than 10.
 
 When ``eb=True``, ComBat uses Empirical Bayes to fit a prior distribution for
 the site effects for each site. You may wish to visualize fit of the prior
