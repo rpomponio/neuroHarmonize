@@ -29,7 +29,7 @@ features:
 Installation
 ------------
 
-Latest version: ``1.0.x`` (August 27, 2020)
+Latest version: ``2.0.0`` (May 2021)
 
 Requirements:
 
@@ -39,14 +39,17 @@ Requirements:
 *To make installation easier, neuroCombat is not a formal dependency for this
 package, but the source code is included to call neuroCombat functions.*
 
-**Option 1: Install from PyPI (not available yet)**
+**Option 1: Install from PyPI**
 
-*Instructions will be written once package is released on PyPI. The package
-cannot be released on PyPI until a developer version of statsmodels is released.*
+To install the latest version of ``neuroHarmonize``, run the following in the command line:
+
+    >>> pip install neuroHarmonize
 
 **Option 2: Install from GitHub**
 
-1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.0.dev0``. Until the dev version is released on PyPI, the current workaround is to run the following in the command line:
+*Use if the first option fails.*
+
+1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.x``. Run the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
     
@@ -57,8 +60,8 @@ cannot be released on PyPI until a developer version of statsmodels is released.
 Quick Start
 -----------
 
-*Please note that the ComBat [3]_ algorithm corrects for site effects but
-intentionally preserves covariate effects.* If you wish to remove covariate
+*Please note:* the ComBat [3]_ algorithm corrects for site effects but
+intentionally preserves covariate effects. If you wish to remove covariate
 effects as well you can use the argument ``return_s_data``.
 
 You must provide a **data matrix** which is a ``numpy.array`` containing the
