@@ -53,7 +53,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         dimensions are N_samples x N_features
 
     s_data (Optional) : a numpy array
-        harmonized data, corrected for all covariates
+        standardized residuals after accounting for `covars` other than `SITE`
         set return_s_data=True to output the variable
     
     """
