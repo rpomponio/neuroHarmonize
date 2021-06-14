@@ -43,6 +43,7 @@ def createMaskNIFTI(paths, threshold=0.0, output_path='thresholded_mask.nii.gz')
     i = 0
     nifti_i = nib.load(paths.PATH[i])
     affine_0 = nifti_i.affine
+    hdr_0 = nifti_i.header
     nifti_sum = nifti_i.get_fdata()
     # iterate over all images
     for i in range(0, n_images):
@@ -57,9 +58,9 @@ def createMaskNIFTI(paths, threshold=0.0, output_path='thresholded_mask.nii.gz')
     # create mask and save as NIFTI image
     nifti_mask = nifti_avg.copy()
     nifti_mask[nifti_mask>0.0] = 1.0
-    img = nib.Nifti1Image(nifti_mask, affine_0)
+    img = nib.Nifti1Image(nifti_mask, affine_0,hdr_0)
     img.to_filename(output_path)
-    return nifti_avg, nifti_mask, affine_0
+    return nifti_avg, nifti_mask, affine_0, hdr_0
 
 def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     """
@@ -85,9 +86,9 @@ def flattenNIFTIs(paths, mask_path, output_path='flattened_NIFTI_array.npy'):
     """
     print('\n[neuroHarmonize]: Flattening NIFTIs will consume large amounts of memory. Down-sampling may help.')
     # load mask (1=GM tissue, 0=Non-GM)
-    nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
+#    nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
+    nifti_mask = (nib.load(mask_path).get_fdata().round().astype(int)==1)  # fix bug
     n_voxels_flattened = np.sum(nifti_mask)
-    # count images
     n_images = paths.shape[0]
     # initialize empty container
     nifti_array = np.zeros((n_images, n_voxels_flattened))
@@ -134,7 +135,7 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
         affine matrix used to save mask
     """
     # load mask (1=include, 0=exclude)
-    nifti_mask = (nib.load(mask_path).get_fdata().astype(int)==1)
+    nifti_mask = (nib.load(mask_path).get_fdata().round().astype(int)==1) #fix bug 
     n_voxels_flattened = np.sum(nifti_mask)
     # count number of images
     n_images = paths.shape[0]
@@ -143,14 +144,15 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
     # apply harmonization model
     for i in range(0, n_images):
         path_new = paths.PATH_NEW.values[i]
-        covars_i = covars.iloc[[i], :]
+        covarsSel = covars.iloc[[i], :]
         nifti = nib.load(paths.PATH[i])
         nifti_array = nifti.get_fdata()[nifti_mask].reshape((1, n_voxels_flattened))
         affine = nifti.affine
-        nifti_array_adj = applyModelOne(nifti_array, covars_i, model)
+        header = nifti.header
+        nifti_array_adj = applyModelOne(nifti_array, covarsSel, model)
         nifti_out = nifti_mask.astype(float).copy()
         nifti_out[nifti_mask] = nifti_array_adj[0, :]
-        nifti_out = nib.Nifti1Image(nifti_out, affine)
+        nifti_out = nib.Nifti1Image(nifti_out, affine, header)
         nifti_out.to_filename(path_new)
         if (i==500):
             print('\n[neuroHarmonize]: saved %d of %d images...' % (i, n_images))
