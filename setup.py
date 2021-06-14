@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='neuroHarmonize',
-      version='2.0.0',
+      version='2.0.1',
       description='Harmonization tools for multi-center neuroimaging studies.',
       long_description=readme(),
       url='https://github.com/rpomponio/neuroHarmonize',
