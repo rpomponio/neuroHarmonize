@@ -115,7 +115,7 @@ def neuroCombat(data,
 
     return bayes_data.T
 
-def make_design_matrix(Y, batch_col, cat_cols, num_cols):
+def make_design_matrix(Y, batch_col, cat_cols, num_cols,nb_class=None):
     """
     Return Matrix containing the following parts:
         - one-hot matrix of batch variable (full)
@@ -134,8 +134,15 @@ def make_design_matrix(Y, batch_col, cat_cols, num_cols):
 
     ### batch one-hot ###
     # convert batch column to integer in case it's string
-    batch = np.unique(Y[:,batch_col],return_inverse=True)[-1]
-    batch_onehot = to_categorical(batch, len(np.unique(batch)))
+    
+
+    if nb_class is not None:
+        batch = Y[:,batch_col]
+        batch_onehot = to_categorical(batch,nb_class)
+    else:
+        batch = np.unique(Y[:,batch_col],return_inverse=True)[-1]
+        batch_onehot = to_categorical(batch, len(np.unique(batch)))
+
     hstack_list.append(batch_onehot)
 
     ### categorical one-hots ###

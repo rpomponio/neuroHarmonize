@@ -6,7 +6,7 @@ import nibabel as nib
 from statsmodels.gam.api import BSplines
 from .neuroCombat import make_design_matrix, adjust_data_final
 
-def harmonizationApply(data, covars, model):
+def harmonizationApply(data, covars, model,return_stand_mean=False):
     """
     Applies harmonization model with neuroCombat functions to new data.
     
@@ -34,19 +34,26 @@ def harmonizationApply(data, covars, model):
     # transpose data as per ComBat convention
     data = data.T
     # prep covariate data
-    batch_labels = np.unique(covars.SITE)
     batch_col = covars.columns.get_loc('SITE')
+    isTrainSite = covars['SITE'].isin(model['SITE_labels'])
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     covars = np.array(covars, dtype='object')
     # load the smoothing model
     smooth_model = model['smooth_model']
     smooth_cols = smooth_model['smooth_cols']
+    
     ### additional setup code from neuroCombat implementation:
-    # convert batch col to integer
-    covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+    # convert training SITEs in batch col to integers
+    site_dict = dict(zip(model['SITE_labels'], np.arange(len(model['SITE_labels']))))
+    covars[:,batch_col] = np.vectorize(site_dict.get)(covars[:,batch_col],-1)
+
+    # compute samples_per_batch for training data
+    sample_per_batch = [np.sum(covars[:,batch_col]==i) for i in list(site_dict.values())]
+    sample_per_batch = np.asarray(sample_per_batch)
+    
     # create dictionary that stores batch info
-    (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
+    batch_levels = np.unique(list(site_dict.values()),return_counts=False)
     info_dict = {
         'batch_levels': batch_levels.astype('int'),
         'n_batch': len(batch_levels),
@@ -54,16 +61,13 @@ def harmonizationApply(data, covars, model):
         'sample_per_batch': sample_per_batch.astype('int'),
         'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
     }
+    covars[~isTrainSite, batch_col] = 0
+    covars[:,batch_col] = covars[:,batch_col].astype(int)
     ###
-    # check sites are identical in training dataset
-    check_sites = info_dict['n_batch']==model['info_dict']['n_batch']
-    if not check_sites:
-        raise ValueError('Number of sites in holdout data not identical to training data. Check `covars` argument.')
-    check_sites = np.mean(batch_labels==model['SITE_labels'])
-    if check_sites!=1:
-        raise ValueError('Labels of sites in holdout data not identical to training data. Check values in "SITE" column.')
+    # isolate array of data in training site
     # apply ComBat without re-learning model parameters
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+    design[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
         # create cubic spline basis for smooth terms
@@ -81,20 +85,28 @@ def harmonizationApply(data, covars, model):
                 df_gam['c' + str(c)] = covars[:, c].astype(float)
         formula = formula[:-2] + '- 1'
         df_gam = pd.DataFrame(df_gam)
-        # check formulas are identical in training dataset
-        check_formula = formula==smooth_model['formula']
-        if not check_formula:
-            raise ValueError('GAM formula for holdout data not identical to training data. Check arguments.')
         # for matrix operations, a modified design matrix is required
         design = np.concatenate((df_gam, bs_basis), axis=1)
+
     ###
     s_data, stand_mean, var_pooled = applyStandardizationAcrossFeatures(data, design, info_dict, model)
-    bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
-                                   stand_mean, var_pooled, info_dict)
+    if sum(isTrainSite)==0:
+        bayes_data = np.full(s_data.shape,np.nan)
+    else:
+        bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
+                                    stand_mean, var_pooled, info_dict)
+        bayes_data[:,~isTrainSite] = np.nan
+                                   
     # transpose data to return to original shape
+    stand_mean = stand_mean.T
     bayes_data = bayes_data.T
-    
-    return bayes_data
+
+    #return either bayes_data or both
+    if return_stand_mean:
+        return bayes_data, stand_mean
+    else:
+        return bayes_data
+
 
 def applyStandardizationAcrossFeatures(X, design, info_dict, model):   
     """
