@@ -133,7 +133,7 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
 
     return s_data, stand_mean, var_pooled
 
-def applyModelOne(data, covars, model):
+def applyModelOne(data, covars, model,return_stand_mean=False):
     """
     Utility function to apply model to one data point.
     """
@@ -146,19 +146,34 @@ def applyModelOne(data, covars, model):
     # prep covariate data
     batch_labels = model['SITE_labels']
     batch_i = covars.SITE.values[0]
+    isTrainSite = covars['SITE'].isin(model['SITE_labels'])
+
     if batch_i not in batch_labels:
-        raise ValueError('Site Label "%s" not in the training set. Check `covars` argument.' % batch_i)
-    batch_level_i = np.argwhere(batch_i==batch_labels)[0]
+#        raise ValueError('Site Label "%s" not in the training set. Check `covars` argument.' % batch_i)
+        batch_level_i = np.array([0])
+    else:
+        batch_level_i = np.argwhere(batch_i==batch_labels)[0]
+
     batch_col = covars.columns.get_loc('SITE')
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     covars = np.array(covars, dtype='object')
+    
+    # convert batch col to integer
+    covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+
     # apply design matrix construction (needs to be modified)
-    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+#    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+
     # encode batches as in larger dataset
     design_i_batch = np.zeros((1, len(batch_labels)))
     design_i_batch[:, batch_level_i] = 1
-    design_i = np.concatenate((design_i_batch, design_i[:, 1:]), axis=1)
+#    design_i = np.concatenate((design_i_batch, design_i[:, 1:]), axis=1)
+    design_i = np.concatenate((design_i_batch, design_i[:, len(batch_labels):]), axis=1)
+
+    design_i[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
+
     # additional setup with batch info
     n_sample = 1
     sample_per_batch = 1
@@ -177,24 +192,34 @@ def applyModelOne(data, covars, model):
 
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
-    # adjust_data_final
-    batch_design = D[:,:n_batch]
 
-    bayesdata = s_data
-    gamma_star = np.array(model['gamma_star'])
-    delta_star = np.array(model['delta_star'])
+    if sum(isTrainSite)==0:
+        bayesdata = np.full(s_data.shape,np.nan)
+    else:
+        # adjust_data_final
+        batch_design = D[:,:n_batch]
 
-    dsq = np.sqrt(delta_star[j, :])
-    dsq = dsq.reshape((len(dsq), 1))
-    denom = np.dot(dsq, np.ones((1, sample_per_batch)))
-    numer = np.array(bayesdata - np.dot(batch_design, gamma_star).T)
+        bayesdata = s_data
+        gamma_star = np.array(model['gamma_star'])
+        delta_star = np.array(model['delta_star'])
 
-    bayesdata = numer / denom
+        dsq = np.sqrt(delta_star[j, :])
+        dsq = dsq.reshape((len(dsq), 1))
+        denom = np.dot(dsq, np.ones((1, sample_per_batch)))
+        numer = np.array(bayesdata - np.dot(batch_design, gamma_star).T)
 
-    vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
-    bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
-    ###
-    return bayesdata.T
+        bayesdata = numer / denom
+
+        vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
+        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
+    
+
+    # return either bayesdata or both
+    if return_stand_mean:
+        return bayesdata.T, stand_mean.T
+    else:
+        return bayesdata.T
+#    return bayesdata.T
 
 def loadHarmonizationModel(file_name):
     """
