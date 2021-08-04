@@ -125,7 +125,7 @@ contains file paths for all of the images in the **training set**.
     >>> import numpy as np
     >>> from neuroHarmonize.harmonizationNIFTI import createMaskNIFTI
     >>> nifti_list = pd.read_csv('brain_images_paths.csv')
-    >>> nifti_avg, nifti_mask, affine = createMaskNIFTI(nifti_list, threshold=0)
+    >>> nifti_avg, nifti_mask, affine, hdr0 = createMaskNIFTI(nifti_list, threshold=0)
 
 After the mask is created, you can flatten the images to a 2D ``numpy.array``
 very similar to what is done with the tabular data example above.
