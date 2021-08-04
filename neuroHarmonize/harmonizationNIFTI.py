@@ -149,11 +149,21 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
         nifti_array = nifti.get_fdata()[nifti_mask].reshape((1, n_voxels_flattened))
         affine = nifti.affine
         header = nifti.header
-        nifti_array_adj = applyModelOne(nifti_array, covarsSel, model)
+#        nifti_array_adj = applyModelOne(nifti_array, covarsSel, model)
+        nifti_array_adj, nifti_array_stand_mean = applyModelOne(nifti_array, covarsSel, model, True) #return stand_mean as well
         nifti_out = nifti_mask.astype(float).copy()
         nifti_out[nifti_mask] = nifti_array_adj[0, :]
         nifti_out = nib.Nifti1Image(nifti_out, affine, header)
         nifti_out.to_filename(path_new)
+
+        #save stand_mean in nifti
+        nifti_out_stand_mean = nifti_mask.astype(float).copy()
+        nifti_out_stand_mean[nifti_mask] = nifti_array_stand_mean[0, :]
+        nifti_out_stand_mean = nib.Nifti1Image(nifti_out_stand_mean, affine, header)
+        path_new_stand_mean = path_new.replace('_harmonized.nii.gz', '_stand_mean.nii.gz')
+        nifti_out_stand_mean.to_filename(path_new_stand_mean)
+
+
         if (i==500):
             print('\n[neuroHarmonize]: saved %d of %d images...' % (i, n_images))
     return None
