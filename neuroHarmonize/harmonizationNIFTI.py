@@ -58,7 +58,7 @@ def createMaskNIFTI(paths, threshold=0.0, output_path='thresholded_mask.nii.gz')
     # create mask and save as NIFTI image
     nifti_mask = nifti_avg.copy()
     nifti_mask[nifti_mask>0.0] = 1.0
-    img = nib.Nifti1Image(nifti_mask, affine_0,hdr_0)
+    img = nib.Nifti1Image(np.round(nifti_mask).astype(np.int16), affine_0,hdr_0) #fix scaling issue
     img.to_filename(output_path)
     return nifti_avg, nifti_mask, affine_0, hdr_0
 
@@ -153,13 +153,13 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
         nifti_array_adj, nifti_array_stand_mean = applyModelOne(nifti_array, covarsSel, model, True) #return stand_mean as well
         nifti_out = nifti_mask.astype(float).copy()
         nifti_out[nifti_mask] = nifti_array_adj[0, :]
-        nifti_out = nib.Nifti1Image(nifti_out, affine, header)
+        nifti_out = nib.Nifti1Image(np.round(nifti_out).astype(np.int16), affine, header) #fix scaling issue
         nifti_out.to_filename(path_new)
 
         #save stand_mean in nifti
         nifti_out_stand_mean = nifti_mask.astype(float).copy()
         nifti_out_stand_mean[nifti_mask] = nifti_array_stand_mean[0, :]
-        nifti_out_stand_mean = nib.Nifti1Image(nifti_out_stand_mean, affine, header)
+        nifti_out_stand_mean = nib.Nifti1Image(np.round(nifti_out_stand_mean).astype(np.int16), affine, header) #fix scaling issue
         path_new_stand_mean = path_new.replace('_harmonized.nii.gz', '_stand_mean.nii.gz')
         nifti_out_stand_mean.to_filename(path_new_stand_mean)
 
