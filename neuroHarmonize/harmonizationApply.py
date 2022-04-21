@@ -2,7 +2,6 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
-import nibabel as nib
 from statsmodels.gam.api import BSplines
 from .neuroCombat import make_design_matrix, adjust_data_final
 
@@ -24,6 +23,9 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
     model : a dictionary of model parameters
         the output of a call to harmonizationLearn()
     
+    ref_batch : batch (site or scanner) to be used as reference for batch adjustment.
+        - None by default
+    
     Returns
     -------
     
@@ -39,6 +41,19 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     covars = np.array(covars, dtype='object')
+
+    if (not ('ref_batch' in model)) or (model['ref_batch'] is None):
+        ref_level=None
+    else:
+        ref_indices = np.argwhere((covars[:,batch_col]==model['ref_batch']).squeeze())
+        if ref_indices.shape[0]==0:
+            ref_level=None
+            print('[neuroCombat] batch.ref not found. Setting to None.')
+            covars[:,batch_col]=np.unique(covars[:,batch_col],return_inverse=True)[-1]
+        else:
+            covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+            ref_level = np.int(covars[ref_indices[0],batch_col])
+
     # load the smoothing model
     smooth_model = model['smooth_model']
     smooth_cols = smooth_model['smooth_cols']
@@ -59,14 +74,15 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
         'sample_per_batch': sample_per_batch.astype('int'),
-        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
+        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels],
+        'ref_level': ref_level
     }
     covars[~isTrainSite, batch_col] = 0
     covars[:,batch_col] = covars[:,batch_col].astype(int)
     ###
     # isolate array of data in training site
     # apply ComBat without re-learning model parameters
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,ref_level,nb_class = len(model['SITE_labels']))
     design[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
@@ -94,7 +110,7 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         bayes_data = np.full(s_data.shape,np.nan)
     else:
         bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
-                                    stand_mean, var_pooled, info_dict)
+                                    stand_mean, var_pooled, info_dict, data)
         bayes_data[:,~isTrainSite] = np.nan
                                    
     # transpose data to return to original shape

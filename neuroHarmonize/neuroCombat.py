@@ -1,19 +1,20 @@
 """
 ComBat for correcting batch effects in neuroimaging data
 """
-#from __future__ import division
-#from __future__ import absolute_import, print_function
 
+from __future__ import absolute_import, print_function
 import pandas as pd
 import numpy as np
 import numpy.linalg as la
-
+import math
+import copy
 
 def neuroCombat(data,
                 covars,
                 batch_col,
                 discrete_cols=None,
-                continuous_cols=None):
+                continuous_cols=None,
+                ref_batch=None):
     """
     Run ComBat to correct for batch effects in neuroimaging data
 
@@ -37,6 +38,9 @@ def neuroCombat(data,
     continuous_cols : string or list of strings
         - variables which are continous that you want to predict
         - e.g. depression sub-scores
+    
+    ref_batch : batch (site or scanner) to be used as reference for batch adjustment.
+        - None by default
 
     Returns
     -------
@@ -78,12 +82,27 @@ def neuroCombat(data,
     cat_cols = [np.where(covar_labels==c_var)[0][0] for c_var in discrete_cols]
     num_cols = [np.where(covar_labels==n_var)[0][0] for n_var in continuous_cols]
 
+    # convert batch col to integer
+    if ref_batch is None:
+        ref_level=None
+    else:
+        ref_indices = np.argwhere((covars[:,batch_col]==ref_batch).squeeze())
+        if ref_indices.shape[0]==0:
+            ref_level=None
+            ref_batch=None
+            print('[neuroCombat] batch.ref not found. Setting to None.')
+            covars[:,batch_col]=np.unique(covars[:,batch_col],return_inverse=True)[-1]
+        else:
+            covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+            ref_level = np.int(covars[ref_indices[0],batch_col])
+
     # conver batch col to integer
-    covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+    # covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
         'batch_levels': batch_levels.astype('int'),
+        'ref_level': ref_level,
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
         'sample_per_batch': sample_per_batch.astype('int'),
@@ -92,7 +111,7 @@ def neuroCombat(data,
 
     # create design matrix
     print('Creating design matrix..')
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,ref_level)
     
     # standardize data across features
     print('Standardizing data across features..')
@@ -115,7 +134,7 @@ def neuroCombat(data,
 
     return bayes_data.T
 
-def make_design_matrix(Y, batch_col, cat_cols, num_cols,nb_class=None):
+def make_design_matrix(Y, batch_col, cat_cols, num_cols,ref_level,nb_class=None):
     """
     Return Matrix containing the following parts:
         - one-hot matrix of batch variable (full)
@@ -142,6 +161,9 @@ def make_design_matrix(Y, batch_col, cat_cols, num_cols,nb_class=None):
     else:
         batch = np.unique(Y[:,batch_col],return_inverse=True)[-1]
         batch_onehot = to_categorical(batch, len(np.unique(batch)))
+    
+    if ref_level is not None:
+        batch_onehot[:,ref_level] = np.ones(batch_onehot.shape[0])
 
     hstack_list.append(batch_onehot)
 
@@ -164,11 +186,21 @@ def standardize_across_features(X, design, info_dict):
     n_batch = info_dict['n_batch']
     n_sample = info_dict['n_sample']
     sample_per_batch = info_dict['sample_per_batch']
+    batch_info = info_dict['batch_info']
+    ref_level = info_dict['ref_level']
 
     B_hat = np.dot(np.dot(la.inv(np.dot(design.T, design)), design.T), X.T)
-    grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
-    var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
 
+    if ref_level is not None:
+        grand_mean = np.transpose(B_hat[ref_level,:])
+        X_ref = X[:,batch_info[ref_level]]
+        design_ref = design[batch_info[ref_level],:]
+        n_sample_ref = sample_per_batch[ref_level]
+        var_pooled = np.dot(((X_ref - np.dot(design_ref, B_hat).T)**2), np.ones((n_sample_ref, 1)) / float(n_sample_ref))
+    else:
+        grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
+        var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
+    
     stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
     tmp = np.array(design.copy())
     tmp[:,:n_batch] = 0
@@ -241,6 +273,7 @@ def it_sol(sdat, g_hat, d_hat, g_bar, t2, a, b, conv=0.0001):
 
 def find_parametric_adjustments(s_data, LS, info_dict):
     batch_info  = info_dict['batch_info'] 
+    ref_level = info_dict['ref_level']
 
     gamma_star, delta_star = [], []
     for i, batch_idxs in enumerate(batch_info):
@@ -250,14 +283,22 @@ def find_parametric_adjustments(s_data, LS, info_dict):
 
         gamma_star.append(temp[0])
         delta_star.append(temp[1])
+    
+    gamma_star = np.array(gamma_star)
+    delta_star = np.array(delta_star)
+
+    if ref_level is not None:
+        gamma_star[ref_level,:] = np.zeros(gamma_star.shape[-1]) 
+        delta_star[ref_level,:] = np.ones(delta_star.shape[-1]) 
 
     return np.array(gamma_star), np.array(delta_star)
 
-def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict):
+def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict,data):
     sample_per_batch = info_dict['sample_per_batch']
     n_batch = info_dict['n_batch']
     n_sample = info_dict['n_sample']
     batch_info = info_dict['batch_info']
+    ref_level = info_dict['ref_level']
 
     batch_design = design[:,:n_batch]
 
@@ -275,5 +316,8 @@ def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_po
 
     vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
     bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
+
+    if ref_level is not None:
+        bayesdata[:, batch_info[ref_level]] = data[:,batch_info[ref_level]]
 
     return bayesdata
