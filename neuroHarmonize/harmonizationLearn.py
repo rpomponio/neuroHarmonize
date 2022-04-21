@@ -6,7 +6,7 @@ from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
-                       smooth_term_bounds=(None, None), return_s_data=False):
+                       smooth_term_bounds=(None, None),ref_batch=None, return_s_data=False):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -36,6 +36,9 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         useful when holdout data covers different range than 
         specify the bounds as (minimum, maximum)
         currently not supported for models with mutliple smooth terms
+    
+    ref_batch : batch (site or scanner) to be used as reference for batch adjustment.
+        - None by default
         
     return_s_data (Optional) : bool, default False
         whether to return s_data, the standardized data array
@@ -75,6 +78,20 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         'df_gam': None
     }
     covars = np.array(covars, dtype='object')
+
+    if ref_batch is None:
+        ref_level=None
+    else:
+        ref_indices = np.argwhere((covars[:,batch_col]==ref_batch).squeeze())
+        if ref_indices.shape[0]==0:
+            ref_level=None
+            ref_batch=None
+            print('[neuroCombat] batch.ref not found. Setting to None.')
+            covars[:,batch_col]=np.unique(covars[:,batch_col],return_inverse=True)[-1]
+        else:
+            covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+            ref_level = np.int(covars[ref_indices[0],batch_col])
+
     ### additional setup code from neuroCombat implementation:
     # convert batch col to integer
     covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
@@ -85,10 +102,11 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
         'sample_per_batch': sample_per_batch.astype('int'),
-        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
+        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels],
+        'ref_level': ref_level
     }
     ###
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,ref_level)
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
         # create cubic spline basis for smooth terms
@@ -124,7 +142,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     else:
         gamma_star = LS_dict['gamma_hat']
         delta_star = np.array(LS_dict['delta_hat'])
-    bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
+    bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict, data)
     # save model parameters in single object
     model = {'design': design, 'SITE_labels': batch_labels,
              'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
@@ -132,7 +150,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
              'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
              'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
              'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
-             'smooth_model': smooth_model, 'eb': eb}
+             'smooth_model': smooth_model, 'eb': eb, 'ref_batch':ref_batch}
     # transpose data to return to original shape
     bayes_data = bayes_data.T
     
