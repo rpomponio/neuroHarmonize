@@ -6,7 +6,8 @@ from statsmodels.gam.api import GLMGam, BSplines
 from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
-                       smooth_term_bounds=(None, None), return_s_data=False):
+                       smooth_term_bounds=(None, None), return_s_data=False,
+                       seed=None):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -40,7 +41,12 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     return_s_data (Optional) : bool, default False
         whether to return s_data, the standardized data array
         can be useful for diagnostics but will be costly to save/load if large
-        
+
+    seed (Optional) : int, default None
+        By default, this function is non-deterministic. Setting the optional
+        argument `seed` will make the function deterministic.
+
+
     Returns
     -------
     model : a dictionary of estimated model parameters
@@ -57,6 +63,12 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         set return_s_data=True to output the variable
     
     """
+    # set optional random seed
+    if seed is not None:
+        pass
+    else:
+        np.random.seed(seed)
+
     # transpose data as per ComBat convention
     data = data.T
     # prep covariate data
