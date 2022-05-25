@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
-import nibabel as nib
+# import nibabel as nib
 from statsmodels.gam.api import BSplines
 from .neuroCombat import make_design_matrix, adjust_data_final
 
@@ -117,7 +117,8 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
     """
     
     n_batch = info_dict['n_batch']
-    n_sample = info_dict['n_sample']
+    # n_sample = info_dict['n_sample']
+    n_sample = design.shape[0]
     sample_per_batch = info_dict['sample_per_batch']
 
     B_hat = model['B_hat']
@@ -126,7 +127,7 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
 
     stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
     tmp = np.array(design.copy())
-    tmp[:,:n_batch] = 0
+    tmp = np.concatenate((np.zeros(shape=(n_sample,len(model['SITE_labels']))), tmp[:,n_batch:]),axis=1)
     stand_mean  += np.dot(tmp, B_hat).T
     
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
