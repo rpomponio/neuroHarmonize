@@ -29,7 +29,7 @@ features:
 Installation
 ------------
 
-Latest version: ``2.1.x`` (August 2021)
+Latest version: ``2.2.x`` (May 2022)
 
 Requirements:
 
@@ -39,13 +39,13 @@ Requirements:
 *To make installation easier, neuroCombat is not a formal dependency for this
 package, but the source code is included to call neuroCombat functions.*
 
-**Option 1: Install from PyPI (Stable version)**
+**Option 1: Install from PyPI (Stable Version)**
 
 To install the latest version of ``neuroHarmonize``, run the following in the command line:
 
     >>> pip install neuroHarmonize
 
-**Option 2: Install from GitHub (Development version)**
+**Option 2: Install from GitHub (Development Version)**
 
 1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.x``. Run the following in the command line:
 

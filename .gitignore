@@ -9,3 +9,6 @@
 
 # internal folder for tests, data
 /internal/
+
+# osx data files
+*.DS_Store
