@@ -11,7 +11,7 @@ Overview
 ---------
 
 This package extends the functionality of the package developed by Nick Cullen [2]_,
-``neuroCombat``, which is hosted on GitHub: https://github.com/ncullen93/neuroCombat
+``neuroCombat``.
 
 Cullen's package, ``neuroCombat``, allows the user to perform a
 harmonization procedure using the ComBat [3]_ algorithm for correcting
@@ -39,20 +39,18 @@ Requirements:
 *To make installation easier, neuroCombat is not a formal dependency for this
 package, but the source code is included to call neuroCombat functions.*
 
-**Option 1: Install from PyPI**
+**Option 1: Install from PyPI (Stable version)**
 
 To install the latest version of ``neuroHarmonize``, run the following in the command line:
 
     >>> pip install neuroHarmonize
 
-**Option 2: Install from GitHub**
-
-*Use if the first option fails.*
+**Option 2: Install from GitHub (Development version)**
 
 1. Install the developer version of ``statsmodels``. This package depends on ``statsmodels v0.12.x``. Run the following in the command line:
 
     >>> pip install git+https://github.com/statsmodels/statsmodels
-    
+
 2. Install latest version of ``neuroHarmonize``. Run the following in the command line:
 
     >>> pip install git+https://github.com/rpomponio/neuroHarmonize
@@ -68,15 +66,15 @@ You must provide a **data matrix** which is a ``numpy.array`` containing the
 features to be harmonized. For example, an ``array`` of brain volumes:
 
 ::
-  
+
   array([[3138.0, 3164.2,  ..., 206.4],
          [1708.4, 2351.2,  ..., 364.0],
          ...,
          [1119.6, 1071.6,  ..., 326.6]])
-         
+
 The dimensionality of this matrix must be: **N_samples x N_features**
 
-You must also provide a **covariate matrix** which is a ``pandas.DataFrame`` 
+You must also provide a **covariate matrix** which is a ``pandas.DataFrame``
 containing all covariates to control for during harmonization. All covariates
 must be encoded numerically (you must handle categorical covariates in a
 pre-processing step, see ``pandas.get_dummies``). The ``DataFrame`` must
@@ -91,7 +89,7 @@ also contain a single column called "SITE" with labels that identify sites
   2  SITE_A  82.9      0
   ...   ...   ...    ...
   9  SITE_B  82.1      0
-  
+
 The dimensionality of this dataframe must be: **N_samples x N_Covariates**
 
 The order of samples must be identical in the **covariate_matrix** and the
@@ -144,7 +142,7 @@ array to ``neuroHarmonize.harmonizationLearn``.
 Lastly, you can apply the model sequentially to images in a larger dataset with
 ``applyModelNIFTIs``. When performing NIFTI harmonization, loading the entire set
 of images may exceed memory capacity. This function will reduce the burden on
-memory by applying the model to images one-by-one and saving the results as NIFTIs. 
+memory by applying the model to images one-by-one and saving the results as NIFTIs.
 
     >>> from neuroHarmonize.harmonizationNIFTI import applyModelNIFTIs
     >>> # load pre-trained model
@@ -202,7 +200,7 @@ brain volumes. This can be done easily with ``harmonizationLearn``:
 
 When applying nonlinear models to holdout data, you may get an error: "some data
 points fall outside the outermost knots, and I'm not sure how to handle them".
-This is documented: https://github.com/statsmodels/statsmodels/issues/2361. 
+This is documented: https://github.com/statsmodels/statsmodels/issues/2361.
 The current workaround is to use the optional argument: ``smooth_term_bounds``,
 which controls the boundary knots for nonlinear estimation. You should specify
 boundaries that contain the limits of the entire dataset, including holdout data.
@@ -249,5 +247,3 @@ Citations
 .. [3] W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray
    expression data using empirical Bayes methods. Biostatistics, 8(1):118-127,
    2007. https://doi.org/10.1093/biostatistics/kxj037.
-
-    
