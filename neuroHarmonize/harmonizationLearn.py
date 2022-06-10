@@ -3,11 +3,12 @@ import pickle
 import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
+from .harmonizationApply import applyStandardizationAcrossFeatures
 from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                        smooth_term_bounds=(None, None), return_s_data=False,
-                       seed=None):
+                       orig_model=None, seed=None):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -69,11 +70,25 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     else:
         np.random.seed(seed)
 
+    if orig_model is None:
+        pass
+    else:
+        model = orig_model.copy()
+    
     # transpose data as per ComBat convention
     data = data.T
     # prep covariate data
+    covar_levels = list(covars.columns)
     batch_labels = np.unique(covars.SITE)
     batch_col = covars.columns.get_loc('SITE')
+
+    if orig_model is None:
+        pass
+    else:
+        isTrainSite = covars['SITE'].isin(model['SITE_labels'])
+        isTrainSiteLabel = set(model['SITE_labels'])
+        isTestSiteColumns = np.where((~pd.DataFrame(np.unique(covars['SITE'])).isin(model['SITE_labels']).values).flat)
+
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     smooth_cols = [covars.columns.get_loc(c) for c in covars.columns if c in smooth_terms]
@@ -101,53 +116,123 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     }
     ###
     design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+
+    
+    
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
         # create cubic spline basis for smooth terms
         X_spline = covars[:, smooth_cols].astype(float)
-        bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols),
-                      knot_kwds=[{'lower_bound':smooth_term_bounds[0], 'upper_bound':smooth_term_bounds[1]}])
-        # construct formula and dataframe required for gam
-        formula = 'y ~ '
-        df_gam = {}
-        for b in batch_levels:
-            formula = formula + 'x' + str(b) + ' + '
-            df_gam['x' + str(b)] = design[:, b]
-        for c in num_cols:
-            if c not in smooth_cols:
-                formula = formula + 'c' + str(c) + ' + '
-                df_gam['c' + str(c)] = covars[:, c].astype(float)
-        formula = formula[:-2] + '- 1'
-        df_gam = pd.DataFrame(df_gam)
-        # for matrix operations, a modified design matrix is required
-        design = np.concatenate((df_gam, bs.basis), axis=1)
-        # store objects in dictionary
-        smooth_model['bsplines_constructor'] = bs
-        smooth_model['formula'] = formula
-        smooth_model['df_gam'] = df_gam
+        if orig_model is None:
+            bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols),
+                        knot_kwds=[{'lower_bound':smooth_term_bounds[0], 'upper_bound':smooth_term_bounds[1]}])
+            # construct formula and dataframe required for gam
+            formula = 'y ~ '
+            df_gam = {}
+            for b in batch_levels:
+                formula = formula + 'x' + str(b) + ' + '
+                df_gam['x' + str(b)] = design[:, b]
+            for c in num_cols:
+                if c not in smooth_cols:
+                    formula = formula + 'c' + str(c) + ' + '
+                    df_gam['c' + str(c)] = covars[:, c].astype(float)
+            formula = formula[:-2] + '- 1'
+            df_gam = pd.DataFrame(df_gam)
+            # for matrix operations, a modified design matrix is required
+            design = np.concatenate((df_gam, bs.basis), axis=1)
+            # store objects in dictionary
+            smooth_model['bsplines_constructor'] = bs
+            smooth_model['formula'] = formula
+            smooth_model['df_gam'] = df_gam
+        else:
+            bs_basis = model['smooth_model']['bsplines_constructor'].transform(X_spline)
+            # construct formula and dataframe required for gam
+            formula = 'y ~ '
+            df_gam = {}
+            for b in batch_levels:
+                formula = formula + 'x' + str(b) + ' + '
+                df_gam['x' + str(b)] = design[:, b]
+            for c in num_cols:
+                if c not in smooth_cols:
+                    formula = formula + 'c' + str(c) + ' + '
+                    df_gam['c' + str(c)] = covars[:, c].astype(float)
+            formula = formula[:-2] + '- 1'
+            df_gam = pd.DataFrame(df_gam)
+            # for matrix operations, a modified design matrix is required
+            design = np.concatenate((df_gam, bs_basis), axis=1)
     ###
     # run steps to perform ComBat
-    s_data, stand_mean, var_pooled, B_hat, grand_mean = standardizeAcrossFeatures(
-        data, design, info_dict, smooth_model)
-    LS_dict = fitLSModelAndFindPriors(s_data, design, info_dict, eb=eb)
-    # optional: avoid EB estimates
-    if eb:
-        gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
+    if orig_model is None:
+        s_data, stand_mean, var_pooled, B_hat, grand_mean = standardizeAcrossFeatures(
+            data, design, info_dict, smooth_model)
+        LS_dict = fitLSModelAndFindPriors(s_data, design, info_dict, eb=eb)
+        # optional: avoid EB estimates
+        if eb:
+            gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
+        else:
+            gamma_star = LS_dict['gamma_hat']
+            delta_star = np.array(LS_dict['delta_hat'])
+        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
+        # save model parameters in single object
+        model = {'design': design, 'SITE_labels': batch_labels,
+                'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
+                'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
+                'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
+                'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
+                'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
+                'smooth_model': smooth_model, 'eb': eb,'SITE_labels_train':batch_labels,'Covariates':covar_levels}
+        # transpose data to return to original shape
+        bayes_data = bayes_data.T
     else:
-        gamma_star = LS_dict['gamma_hat']
-        delta_star = np.array(LS_dict['delta_hat'])
-    bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
-    # save model parameters in single object
-    model = {'design': design, 'SITE_labels': batch_labels,
-             'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
-             'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
-             'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
-             'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
-             'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
-             'smooth_model': smooth_model, 'eb': eb}
-    # transpose data to return to original shape
-    bayes_data = bayes_data.T
-    
+        # Create train data 
+        (batch_levels, sample_per_batch) = np.unique(covars[isTrainSite,batch_col],return_counts=True)
+        if batch_levels.size == 0:
+            bayes_data_train = np.zeros(shape=(0,data.shape[0]))
+            s_data_train = np.zeros(shape=(0,data.shape[0])).T
+        else:
+            info_dict_train = model['info_dict']
+            info_dict_train['sample_per_batch'] = sample_per_batch.astype('int')
+            info_dict_train['batch_info'] = [list(np.where(covars[isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
+            tmp = np.concatenate((np.zeros(shape=(info_dict['n_sample'],len(model['SITE_labels']))), design[:,len(batch_labels):]),axis=1)
+            s_data_train, stand_mean_train, _ = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
+            bayes_data_train = adjust_data_final(s_data_train, design[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train)
+            # transpose data to return to original shape
+            bayes_data_train = bayes_data_train.T
+
+        # Create test data
+        (batch_levels, sample_per_batch) = np.unique(covars[~isTrainSite,batch_col],return_counts=True)
+        if batch_levels.size == 0:
+            bayes_data_test = np.zeros(shape=(0,data.shape[0]))
+            s_data_test = np.zeros(shape=(0,data.shape[0])).T
+        else:
+            info_dict_test = {
+                'batch_levels': batch_levels.astype('int'),
+                'n_batch': len(batch_levels),
+                'n_sample': int(covars[~isTrainSite,:].shape[0]),
+                'sample_per_batch': sample_per_batch.astype('int'),
+                'batch_info': [list(np.where(covars[~isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
+            }
+            design_tmp = np.concatenate((design[:,isTestSiteColumns[0]], design[:,len(batch_labels):]),axis=1)
+            s_data_test, stand_mean_test, _ = applyStandardizationAcrossFeatures(data[:,~isTrainSite], design_tmp[~isTrainSite,:], info_dict_test, model)
+            LS_dict = fitLSModelAndFindPriors(s_data_test, design_tmp[~isTrainSite,:], info_dict_test, eb=eb)
+            if eb:
+                gamma_star, delta_star = find_parametric_adjustments(s_data_test, LS_dict, info_dict_test)
+            else:
+                gamma_star = LS_dict['gamma_hat']
+                delta_star = np.array(LS_dict['delta_hat'])
+            model['SITE_labels'] = np.append(model['SITE_labels'],list(set(batch_labels)-isTrainSiteLabel))
+            model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
+            model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
+            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test)
+            # transpose data to return to original shape
+            bayes_data_test = bayes_data_test.T
+        bayes_data = np.zeros(shape=data.T.shape)
+        bayes_data[isTrainSite,:] = bayes_data_train
+        bayes_data[~isTrainSite,:] = bayes_data_test
+        s_data = np.zeros(shape=data.T.shape)
+        s_data[isTrainSite,:] = s_data_train.T
+        s_data[~isTrainSite,:] = s_data_test.T
+
     if return_s_data:
         return model, bayes_data, s_data.T
     else:
@@ -214,7 +299,7 @@ def fitLSModelAndFindPriors(s_data, design, info_dict, eb=True):
     batch_info = info_dict['batch_info'] 
     
     batch_design = design[:,:n_batch]
-    gamma_hat = np.dot(np.dot(np.linalg.inv(np.dot(batch_design.T, batch_design)), batch_design.T), s_data.T)
+    gamma_hat = np.array(np.dot(np.dot(np.linalg.inv(np.matrix(np.dot(batch_design.T, batch_design))), batch_design.T), s_data.T))
 
     delta_hat = []
     for i, batch_idxs in enumerate(batch_info):

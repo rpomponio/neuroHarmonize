@@ -256,7 +256,7 @@ def find_parametric_adjustments(s_data, LS, info_dict):
 def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict):
     sample_per_batch = info_dict['sample_per_batch']
     n_batch = info_dict['n_batch']
-    n_sample = info_dict['n_sample']
+    n_sample = design.shape[0]
     batch_info = info_dict['batch_info']
 
     batch_design = design[:,:n_batch]
