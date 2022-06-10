@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
-# import nibabel as nib
+import nibabel as nib
 from statsmodels.gam.api import BSplines
 from .neuroCombat import make_design_matrix, adjust_data_final
 
@@ -117,7 +117,6 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
     """
     
     n_batch = info_dict['n_batch']
-    # n_sample = info_dict['n_sample']
     n_sample = design.shape[0]
     sample_per_batch = info_dict['sample_per_batch']
 

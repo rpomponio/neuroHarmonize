@@ -87,6 +87,8 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     else:
         isTrainSite = covars['SITE'].isin(model['SITE_labels'])
         isTrainSiteLabel = set(model['SITE_labels'])
+        isTrainSiteColumns = np.where((pd.DataFrame(np.unique(covars['SITE'])).isin(model['SITE_labels']).values).flat)
+        isTrainSiteColumnsOrig = np.where((pd.DataFrame(model['SITE_labels']).isin(np.unique(covars['SITE'])).values).flat)
         isTestSiteColumns = np.where((~pd.DataFrame(np.unique(covars['SITE'])).isin(model['SITE_labels']).values).flat)
 
     cat_cols = []
@@ -195,7 +197,9 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             info_dict_train['batch_info'] = [list(np.where(covars[isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
             tmp = np.concatenate((np.zeros(shape=(info_dict['n_sample'],len(model['SITE_labels']))), design[:,len(batch_labels):]),axis=1)
             s_data_train, stand_mean_train, _ = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
-            bayes_data_train = adjust_data_final(s_data_train, design[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train)
+            design2=tmp.copy()
+            design2[:,isTrainSiteColumnsOrig[0]] = design[:,isTrainSiteColumns[0]]
+            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train)
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
