@@ -192,7 +192,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             bayes_data_train = np.zeros(shape=(0,data.shape[0]))
             s_data_train = np.zeros(shape=(0,data.shape[0])).T
         else:
-            info_dict_train = model['info_dict']
+            info_dict_train = model['info_dict'].copy()
             info_dict_train['sample_per_batch'] = sample_per_batch.astype('int')
             info_dict_train['batch_info'] = [list(np.where(covars[isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
             tmp = np.concatenate((np.zeros(shape=(info_dict['n_sample'],len(model['SITE_labels']))), design[:,len(batch_labels):]),axis=1)
@@ -203,7 +203,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
-        # Create test data
+        # Create test data (new SITE)
         (batch_levels, sample_per_batch) = np.unique(covars[~isTrainSite,batch_col],return_counts=True)
         if batch_levels.size == 0:
             bayes_data_test = np.zeros(shape=(0,data.shape[0]))
@@ -233,6 +233,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             model['SITE_labels'] = np.append(model['SITE_labels'],list(set(batch_labels)-isTrainSiteLabel))
             model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
             model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
+            model['info_dict']['n_batch'] = len(model['SITE_labels'])
             bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test)
             # transpose data to return to original shape
             bayes_data_test = bayes_data_test.T
