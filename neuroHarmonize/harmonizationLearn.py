@@ -192,7 +192,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             bayes_data_train = np.zeros(shape=(0,data.shape[0]))
             s_data_train = np.zeros(shape=(0,data.shape[0])).T
         else:
-            info_dict_train = model['info_dict']
+            info_dict_train = model['info_dict'].copy()
             info_dict_train['sample_per_batch'] = sample_per_batch.astype('int')
             info_dict_train['batch_info'] = [list(np.where(covars[isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
             tmp = np.concatenate((np.zeros(shape=(info_dict['n_sample'],len(model['SITE_labels']))), design[:,len(batch_labels):]),axis=1)
@@ -203,7 +203,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
-        # Create test data
+        # Create test data (new SITE)
         (batch_levels, sample_per_batch) = np.unique(covars[~isTrainSite,batch_col],return_counts=True)
         if batch_levels.size == 0:
             bayes_data_test = np.zeros(shape=(0,data.shape[0]))
@@ -224,9 +224,16 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             else:
                 gamma_star = LS_dict['gamma_hat']
                 delta_star = np.array(LS_dict['delta_hat'])
+            betas = []
+            for i in range(info_dict_test['n_batch']):
+                diff_mean = np.mean(data[:,info_dict_test['batch_info'][i]]-np.dot(design[info_dict_test['batch_info'][i],info_dict['n_batch']:],model['B_hat'][len(model['SITE_labels']):,:]).T,axis=1)
+                betas.append(diff_mean)
+            new_betas = np.array(betas)
+            model['B_hat'] = np.concatenate((model['B_hat'][:len(model['SITE_labels']),:],new_betas,model['B_hat'][len(model['SITE_labels']):,:]))
             model['SITE_labels'] = np.append(model['SITE_labels'],list(set(batch_labels)-isTrainSiteLabel))
             model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
             model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
+            model['info_dict']['n_batch'] = len(model['SITE_labels'])
             bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test)
             # transpose data to return to original shape
             bayes_data_test = bayes_data_test.T
@@ -283,11 +290,10 @@ def standardizeAcrossFeatures(X, design, info_dict, smooth_model):
     grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
     var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
 
-    stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
+    stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample))) # nothing but grand mean
     tmp = np.array(design.copy())
     tmp[:,:n_batch] = 0
-    stand_mean  += np.dot(tmp, B_hat).T
-
+    stand_mean  += np.dot(tmp, B_hat).T  
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
     return s_data, stand_mean, var_pooled, B_hat, grand_mean
