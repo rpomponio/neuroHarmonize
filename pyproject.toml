@@ -4,3 +4,45 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "neuroHarmonize"
+version = "2.2.0"
+description = "Harmonization tools for multi-center neuroimaging studies."
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+authors = [
+    {email = "raymond.pomponio@outlook.edu"},
+    {name = "Raymond Pomponio"}
+]
+keywords = [
+    "neuroimaging",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    "numpy>=1.22,<1.24",
+    "pandas>=1.4.0,<1.5",
+    "statsmodels>=0.12.0"
+]
+
+[project.urls]
+homepage = "https://github.com/rpomponio/neuroHarmonize"
+"Bug Tracker" = "https://github.com/rpomponio/neuroHarmonize/issues"
+
+[project.optional-dependencies]
+nifti = ["nibabel>=3.2.0,<4.1"]

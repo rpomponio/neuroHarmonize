@@ -36,8 +36,11 @@ Requirements:
 * ``git >= 2.17.2``
 * ``python >= 3.6.8``
 
-To make installation easier, neuroCombat is not a formal dependency for this
-package, but the source code is included to call neuroCombat functions.
+By default, it will install all the dependencies required to run the package,
+without considering support for NIFTI files (``harmonizationNIFTI`` module).
+If you want support for nifti files, follow options 3 and 4.
+
+To install the package, run the following command:
 
 **Option 1: Install from PyPI (Stable Version)**
 
@@ -46,6 +49,18 @@ package, but the source code is included to call neuroCombat functions.
 **Option 2: Install from GitHub (Development Version)**
 
     >>> pip install git+https://github.com/rpomponio/neuroHarmonize
+
+**Option 3: [NIFTI] Install from PyPI (Stable Version)**
+
+    >>> pip install neuroHarmonize[nifti]
+
+**Option 4: [NIFTI] Install from GitHub (Development Version)**
+
+    >>> pip install neuroHarmonize[nifti] @ git+https://github.com/rpomponio/neuroHarmonize
+
+To make installation easier, neuroCombat is not a formal dependency for this
+package, but the source code is included to call neuroCombat functions.
+
 
 Quick Start
 -----------
