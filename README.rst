@@ -54,7 +54,7 @@ To install the package, run the following command:
 
     >>> pip install neuroHarmonize[nifti]
 
-**Option 2: [NIFTI] Install from GitHub (Development Version)**
+**Option 4: [NIFTI] Install from GitHub (Development Version)**
 
     >>> pip install neuroHarmonize[nifti] @ git+https://github.com/rpomponio/neuroHarmonize
 
