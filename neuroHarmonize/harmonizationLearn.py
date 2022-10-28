@@ -5,6 +5,7 @@ import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .harmonizationApply import applyStandardizationAcrossFeatures
 from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
+import copy
 
 def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                        smooth_term_bounds=(None, None), return_s_data=False,
@@ -73,7 +74,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     if orig_model is None:
         pass
     else:
-        model = orig_model.copy()
+        model = copy.deepcopy(orig_model)
     
     # transpose data as per ComBat convention
     data = data.T
