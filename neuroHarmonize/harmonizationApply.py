@@ -36,8 +36,15 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
     # prep covariate data
     batch_col = covars.columns.get_loc('SITE')
     isTrainSite = covars['SITE'].isin(model['SITE_labels'])
-    cat_cols = []
-    num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
+
+    def column_index(df, query_cols):
+        cols = df.columns.values
+        sidx = np.argsort(cols)
+        return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
+
+    num_cols_names = covars.select_dtypes([np.number]).columns
+    num_cols = list(column_index(covars, num_cols_names))
+    cat_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE' and c not in num_cols_names]
     covars = np.array(covars, dtype='object')
     # load the smoothing model
     smooth_model = model['smooth_model']
@@ -153,7 +160,7 @@ def applyModelOne(data, covars, model,return_stand_mean=False):
         batch_level_i = np.array([0])
     else:
         batch_level_i = np.argwhere(batch_i==batch_labels)[0]
-
+        
     batch_col = covars.columns.get_loc('SITE')
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']

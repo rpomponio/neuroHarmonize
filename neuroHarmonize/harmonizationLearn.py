@@ -92,8 +92,14 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         isTrainSiteColumnsOrig = np.where((pd.DataFrame(model['SITE_labels']).isin(np.unique(covars['SITE'])).values).flat)
         isTestSiteColumns = np.where((~pd.DataFrame(np.unique(covars['SITE'])).isin(model['SITE_labels']).values).flat)
 
-    cat_cols = []
-    num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
+    def column_index(df, query_cols):
+        cols = df.columns.values
+        sidx = np.argsort(cols)
+        return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
+
+    num_cols_names = covars.select_dtypes([np.number]).columns
+    num_cols = list(column_index(covars, num_cols_names))
+    cat_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE' and c not in num_cols_names]
     smooth_cols = [covars.columns.get_loc(c) for c in covars.columns if c in smooth_terms]
     # maintain a dictionary of smoothing information
     smooth_model = {
