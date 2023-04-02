@@ -119,7 +119,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             ref_batch=None
             print('[neuroHarmonize] batch.ref not found. Setting to None.')
         else:
-            ref_level = np.int(covars[ref_indices[0],batch_col])
+            ref_level = int(covars[ref_indices[0],batch_col])
 
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
@@ -132,7 +132,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         'ref_level': ref_level
     }
     ###
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
 
     
     
@@ -189,7 +189,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         else:
             gamma_star = LS_dict['gamma_hat']
             delta_star = np.array(LS_dict['delta_hat'])
-        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
+        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict, data)
         # save model parameters in single object
         model = {'design': design, 'SITE_labels': batch_labels,
                 'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
@@ -214,7 +214,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             s_data_train, stand_mean_train, _ = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
             design2=tmp.copy()
             design2[:,isTrainSiteColumnsOrig[0]] = design[:,isTrainSiteColumns[0]]
-            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train)
+            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train, data)
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
@@ -249,7 +249,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
             model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
             model['info_dict']['n_batch'] = len(model['SITE_labels'])
-            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test)
+            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test, data)
             # transpose data to return to original shape
             bayes_data_test = bayes_data_test.T
         bayes_data = np.zeros(shape=data.T.shape)

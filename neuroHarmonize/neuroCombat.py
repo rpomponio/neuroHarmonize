@@ -182,7 +182,7 @@ def make_design_matrix(Y, batch_col, cat_cols, num_cols, ref_level):
     batch = np.unique(Y[:,batch_col],return_inverse=True)[-1]
     batch_onehot = to_categorical(batch, len(np.unique(batch)))
     if ref_level is not None:
-        batch_onehot[:,ref_level] = np.ones(batch_onehot.shape[0])
+        batch_onehot[:,ref_level] = np.squeeze(np.ones(batch_onehot.shape[0]))
     hstack_list.append(batch_onehot)
 
     ### categorical one-hots ###
@@ -355,7 +355,7 @@ def int_eprior(sdat, g_hat, d_hat):
     return adjust
 
 
-def find_parametric_adjustments(s_data, LS, info_dict, mean_only):
+def find_parametric_adjustments(s_data, LS, info_dict, mean_only=False):
     batch_info  = info_dict['batch_info'] 
     ref_level = info_dict['ref_level']
 
@@ -414,7 +414,8 @@ def find_non_eb_adjustments(s_data, LS, info_dict):
     
     return gamma_star, delta_star
 
-def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, mod_mean, var_pooled, info_dict, dat):
+
+def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict,data):
     sample_per_batch = info_dict['sample_per_batch']
     n_batch = info_dict['n_batch']
     n_sample = info_dict['n_sample']
@@ -436,15 +437,43 @@ def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, mod_me
         bayesdata[:,batch_idxs] = numer / denom
 
     vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
-    bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean + mod_mean
+    bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
 
     if ref_level is not None:
-        bayesdata[:, batch_info[ref_level]] = dat[:,batch_info[ref_level]]
+        bayesdata[:, batch_info[ref_level]] = data[:,batch_info[ref_level]]
 
     return bayesdata
 
+# TODO: figure out this new mod_mean stuff
 
-
+# def adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, mod_mean, var_pooled, info_dict, dat):
+#     sample_per_batch = info_dict['sample_per_batch']
+#     n_batch = info_dict['n_batch']
+#     n_sample = info_dict['n_sample']
+#     batch_info = info_dict['batch_info']
+#     ref_level = info_dict['ref_level']
+# 
+#     batch_design = design[:,:n_batch]
+# 
+#     bayesdata = s_data
+#     gamma_star = np.array(gamma_star)
+#     delta_star = np.array(delta_star)
+# 
+#     for j, batch_idxs in enumerate(batch_info):
+#         dsq = np.sqrt(delta_star[j,:])
+#         dsq = dsq.reshape((len(dsq), 1))
+#         denom = np.dot(dsq, np.ones((1, sample_per_batch[j])))
+#         numer = np.array(bayesdata[:,batch_idxs] - np.dot(batch_design[batch_idxs,:], gamma_star).T)
+# 
+#         bayesdata[:,batch_idxs] = numer / denom
+# 
+#     vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
+#     bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean + mod_mean
+# 
+#     if ref_level is not None:
+#         bayesdata[:, batch_info[ref_level]] = dat[:,batch_info[ref_level]]
+# 
+#     return bayesdata
 
 def neuroCombatFromTraining(dat,
                             batch,

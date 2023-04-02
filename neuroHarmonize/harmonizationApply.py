@@ -73,7 +73,7 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
     ###
     # isolate array of data in training site
     # apply ComBat without re-learning model parameters
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level, nb_class = len(model['SITE_labels']))
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
     design[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
@@ -171,7 +171,7 @@ def applyModelOne(data, covars, model,return_stand_mean=False):
 
     # apply design matrix construction (needs to be modified)
 #    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols)
-    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
 
     # encode batches as in larger dataset
     design_i_batch = np.zeros((1, len(batch_labels)))
