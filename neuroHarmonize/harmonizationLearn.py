@@ -78,7 +78,8 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
 
     # bypass EB step if only one variable provided in dataset
     if data.shape[1]==1:
-        print('\n[neuroHarmonize]: Bypassing empirical Bayes step because only one variable to harmonize.')
+        if eb:
+            print('\n[neuroHarmonize]: Bypassing empirical Bayes step because only one variable to harmonize.')
         eb = False
     
     # transpose data as per ComBat convention
