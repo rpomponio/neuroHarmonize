@@ -75,6 +75,12 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         pass
     else:
         model = copy.deepcopy(orig_model)
+
+    # bypass EB step if only one variable provided in dataset
+    if data.shape[1]==1:
+        if eb:
+            print('\n[neuroHarmonize]: Bypassing empirical Bayes step because only one variable to harmonize.')
+        eb = False
     
     # transpose data as per ComBat convention
     data = data.T
