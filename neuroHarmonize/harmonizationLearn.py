@@ -133,8 +133,11 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         # create cubic spline basis for smooth terms
         X_spline = covars[:, smooth_cols].astype(float)
         if orig_model is None:
-            bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols),
-                        knot_kwds=[{'lower_bound':smooth_term_bounds[0], 'upper_bound':smooth_term_bounds[1]}])
+            if len(smooth_cols)==1:
+                bs = BSplines(X_spline, df=10, degree=3,
+                            knot_kwds=[{'lower_bound':smooth_term_bounds[0], 'upper_bound':smooth_term_bounds[1]}])
+            else:
+                bs = BSplines(X_spline, df=[10] * len(smooth_cols), degree=[3] * len(smooth_cols))
             # construct formula and dataframe required for gam
             formula = 'y ~ '
             df_gam = {}
