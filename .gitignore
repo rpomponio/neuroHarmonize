@@ -12,4 +12,6 @@
 
 # osx data files
 *.DS_Store
-PyPI-Recovery-Codes*.txt
+
+# Python Packaging Index account files
+PyPI-*
