@@ -23,7 +23,7 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         
     model : a dictionary of model parameters
         the output of a call to harmonizationLearn()
-    
+
     Returns
     -------
     
@@ -39,6 +39,12 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
     cat_cols = []
     num_cols = [covars.columns.get_loc(c) for c in covars.columns if c!='SITE']
     covars = np.array(covars, dtype='object')
+
+    if "ref_level" in model["info_dict"]:
+        ref_level = model["info_dict"]["ref_level"]
+    else:
+        ref_level = None
+
     # load the smoothing model
     smooth_model = model['smooth_model']
     smooth_cols = smooth_model['smooth_cols']
@@ -59,14 +65,15 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
         'sample_per_batch': sample_per_batch.astype('int'),
-        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
+        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels],
+        'ref_level': ref_level
     }
     covars[~isTrainSite, batch_col] = 0
     covars[:,batch_col] = covars[:,batch_col].astype(int)
     ###
     # isolate array of data in training site
     # apply ComBat without re-learning model parameters
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
     design[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
     ### additional setup if smoothing is performed
     if smooth_model['perform_smoothing']:
@@ -94,7 +101,7 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         bayes_data = np.full(s_data.shape,np.nan)
     else:
         bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
-                                    stand_mean, var_pooled, info_dict)
+                                    stand_mean, var_pooled, info_dict, data)
         bayes_data[:,~isTrainSite] = np.nan
                                    
     # transpose data to return to original shape
@@ -117,7 +124,7 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
     """
     
     n_batch = info_dict['n_batch']
-    n_sample = design.shape[0]
+    n_sample = info_dict['n_sample']
     sample_per_batch = info_dict['sample_per_batch']
 
     B_hat = model['B_hat']
@@ -126,7 +133,7 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
 
     stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
     tmp = np.array(design.copy())
-    tmp = np.concatenate((np.zeros(shape=(n_sample,len(model['SITE_labels']))), tmp[:,n_batch:]),axis=1)
+    tmp[:,:n_batch] = 0
     stand_mean  += np.dot(tmp, B_hat).T
     
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
@@ -164,7 +171,7 @@ def applyModelOne(data, covars, model,return_stand_mean=False):
 
     # apply design matrix construction (needs to be modified)
 #    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols)
-    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols,nb_class = len(model['SITE_labels']))
+    design_i = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
 
     # encode batches as in larger dataset
     design_i_batch = np.zeros((1, len(batch_labels)))
