@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .harmonizationApply import applyStandardizationAcrossFeatures
-from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
+from neuroCombat.neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 import copy
 
-def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
-                       smooth_term_bounds=(None, None), ref_batch=None, return_s_data=False,
+def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bounds=(None, None),
+                       ref_batch=None, return_s_data=False,
                        orig_model=None, seed=None):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
@@ -40,8 +40,8 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         specify the bounds as (minimum, maximum)
         currently not supported for models with mutliple smooth terms
         
-    ref_batch : batch (site or scanner) to be used as reference for batch adjustment.
-        - None by default
+    ref_batch (Optional) : str or int, default None
+        batch (site or scanner) to be used as reference for batch adjustment
         
     return_s_data (Optional) : bool, default False
         whether to return s_data, the standardized data array
@@ -189,24 +189,25 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     ###
     # run steps to perform ComBat
     if orig_model is None:
-        s_data, stand_mean, var_pooled, B_hat, grand_mean = standardizeAcrossFeatures(
+        s_data, stand_mean, var_pooled, mod_mean, B_hat = standardizeAcrossFeatures(
             data, design, info_dict, smooth_model)
         LS_dict = fitLSModelAndFindPriors(s_data, design, info_dict, eb=eb)
         # optional: avoid EB estimates
         if eb:
-            gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict)
+            gamma_star, delta_star = find_parametric_adjustments(s_data, LS_dict, info_dict, mean_only=False)
         else:
             gamma_star = LS_dict['gamma_hat']
             delta_star = np.array(LS_dict['delta_hat'])
-        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict, data)
+        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, mod_mean, var_pooled, info_dict, data)
         # save model parameters in single object
         model = {'design': design, 'SITE_labels': batch_labels,
-                'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
+                'var_pooled':var_pooled, 'B_hat':B_hat, 'stand_mean': stand_mean, 'mod_mean': mod_mean,
                 'gamma_star': gamma_star, 'delta_star': delta_star, 'info_dict': info_dict,
                 'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
                 'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
                 'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
-                'smooth_model': smooth_model, 'eb': eb,'SITE_labels_train':batch_labels,'Covariates':covar_levels, 'ref_batch': ref_batch}
+                'smooth_model': smooth_model, 'eb': eb,'SITE_labels_train':batch_labels,'Covariates':covar_levels,
+                'ref_batch': ref_batch}
         # transpose data to return to original shape
         bayes_data = bayes_data.T
     else:
@@ -220,10 +221,10 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             info_dict_train['sample_per_batch'] = sample_per_batch.astype('int')
             info_dict_train['batch_info'] = [list(np.where(covars[isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
             tmp = np.concatenate((np.zeros(shape=(info_dict['n_sample'],len(model['SITE_labels']))), design[:,len(batch_labels):]),axis=1)
-            s_data_train, stand_mean_train, _ = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
+            s_data_train, stand_mean_train, var_pooled_train, mod_mean_train = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
             design2=tmp.copy()
             design2[:,isTrainSiteColumnsOrig[0]] = design[:,isTrainSiteColumns[0]]
-            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train, data)
+            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, mod_mean_train, model['var_pooled'], info_dict_train, data)
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
@@ -241,10 +242,10 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                 'batch_info': [list(np.where(covars[~isTrainSite,batch_col]==idx)[0]) for idx in batch_levels]
             }
             design_tmp = np.concatenate((design[:,isTestSiteColumns[0]], design[:,len(batch_labels):]),axis=1)
-            s_data_test, stand_mean_test, _ = applyStandardizationAcrossFeatures(data[:,~isTrainSite], design_tmp[~isTrainSite,:], info_dict_test, model)
+            s_data_test, stand_mean_test, var_pooled_test, mod_mean_test = applyStandardizationAcrossFeatures(data[:,~isTrainSite], design_tmp[~isTrainSite,:], info_dict_test, model)
             LS_dict = fitLSModelAndFindPriors(s_data_test, design_tmp[~isTrainSite,:], info_dict_test, eb=eb)
             if eb:
-                gamma_star, delta_star = find_parametric_adjustments(s_data_test, LS_dict, info_dict_test)
+                gamma_star, delta_star = find_parametric_adjustments(s_data_test, LS_dict, info_dict_test, mean_only=False)
             else:
                 gamma_star = LS_dict['gamma_hat']
                 delta_star = np.array(LS_dict['delta_hat'])
@@ -258,7 +259,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
             model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
             model['info_dict']['n_batch'] = len(model['SITE_labels'])
-            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test, data)
+            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, mod_mean_test, model['var_pooled'], info_dict_test, data)
             # transpose data to return to original shape
             bayes_data_test = bayes_data_test.T
         bayes_data = np.zeros(shape=data.T.shape)
@@ -325,13 +326,16 @@ def standardizeAcrossFeatures(X, design, info_dict, smooth_model):
         var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
 
     stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample))) # nothing but grand mean
-    tmp = np.array(design.copy())
-    tmp[:,:n_batch] = 0
-    stand_mean  += np.dot(tmp, B_hat).T  
 
-    s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
+    # new code in neuroCombat to compute model mean
+    if design is not None:
+        tmp = copy.deepcopy(design)
+        tmp[:,range(0,n_batch)] = 0
+        mod_mean = np.transpose(np.dot(tmp, B_hat))
 
-    return s_data, stand_mean, var_pooled, B_hat, grand_mean
+    s_data = ((X- stand_mean - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
+
+    return s_data, stand_mean, var_pooled, mod_mean, B_hat
 
 def fitLSModelAndFindPriors(s_data, design, info_dict, eb=True):
     """

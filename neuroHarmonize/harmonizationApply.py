@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 from statsmodels.gam.api import BSplines
-from .neuroCombat import make_design_matrix, adjust_data_final
+from neuroCombat.neuroCombat import make_design_matrix, adjust_data_final
+import copy
 
-def harmonizationApply(data, covars, model,return_stand_mean=False):
+def harmonizationApply(data, covars, model, return_stand_mean=False):
     """
     Applies harmonization model with neuroCombat functions to new data.
     
@@ -96,12 +97,12 @@ def harmonizationApply(data, covars, model,return_stand_mean=False):
         design = np.concatenate((df_gam, bs_basis), axis=1)
 
     ###
-    s_data, stand_mean, var_pooled = applyStandardizationAcrossFeatures(data, design, info_dict, model)
+    s_data, stand_mean, var_pooled, mod_mean = applyStandardizationAcrossFeatures(data, design, info_dict, model)
     if sum(isTrainSite)==0:
         bayes_data = np.full(s_data.shape,np.nan)
     else:
         bayes_data = adjust_data_final(s_data, design, model['gamma_star'], model['delta_star'],
-                                    stand_mean, var_pooled, info_dict, data)
+                                       stand_mean, mod_mean, var_pooled, info_dict, data)
         bayes_data[:,~isTrainSite] = np.nan
                                    
     # transpose data to return to original shape
@@ -128,19 +129,20 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
     sample_per_batch = info_dict['sample_per_batch']
 
     B_hat = model['B_hat']
-    grand_mean = model['grand_mean']
+    stand_mean = model['stand_mean']
     var_pooled = model['var_pooled']
-
-    stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
-    tmp = np.array(design.copy())
-    tmp[:,:n_batch] = 0
-    stand_mean  += np.dot(tmp, B_hat).T
     
-    s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
+    # new code in neuroCombat to compute model mean
+    if design is not None:
+        tmp = copy.deepcopy(design)
+        tmp[:,range(0,n_batch)] = 0
+        mod_mean = np.transpose(np.dot(tmp, B_hat))
+    
+    s_data = ((X- stand_mean - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
-    return s_data, stand_mean, var_pooled
+    return s_data, stand_mean, var_pooled, mod_mean
 
-def applyModelOne(data, covars, model,return_stand_mean=False):
+def applyModelOne(data, covars, model, return_stand_mean=False):
     """
     Utility function to apply model to one data point.
     """
@@ -160,6 +162,11 @@ def applyModelOne(data, covars, model,return_stand_mean=False):
         batch_level_i = np.array([0])
     else:
         batch_level_i = np.argwhere(batch_i==batch_labels)[0]
+
+    if "ref_level" in model["info_dict"]:
+        ref_level = model["info_dict"]["ref_level"]
+    else:
+        ref_level = None
 
     batch_col = covars.columns.get_loc('SITE')
     cat_cols = []

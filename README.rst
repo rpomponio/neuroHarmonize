@@ -10,17 +10,18 @@ contact: raymond (dot) pomponio (at) outlook (dot) com
 Overview
 ---------
 
-This package extends the functionality of the package developed by Nick Cullen [2]_,
-``neuroCombat``.
+This package extends the functionality of the package developed by Jean-Philippe
+Fortin and Nick Cullen [2]_, ``neuroCombat``. **New in version 2.4.x:**
+``neuroCombat`` is now a formal dependency for ``neuroHarmonize``.
 
-Cullen's package, ``neuroCombat``, allows the user to perform a
+The reference implementation, ``neuroCombat``, allows the user to perform a
 harmonization procedure using the ComBat [3]_ algorithm for correcting
 multi-site data.
 
-This package, ``neuroHarmonize``, provides similar functionality, with additional
-features:
+This package, ``neuroHarmonize``, provides similar functionality, with
+additional features:
 
-1. Support for working with NIFTI images. Implemented with the ``nibabel`` package.
+1. Support for working with NIFTI images, with the ``nibabel`` package.
 2. Separate train/test datasets.
 3. Specify covariates with generic nonlinear effects. Implemented using
    Generalized Additive Models (GAMs) from the ``statsmodels`` package.
@@ -29,15 +30,12 @@ features:
 Installation
 ------------
 
-Latest version: `2.3.1` (March 2024)
+Latest version: ``2.4.0`` (April 2024)
 
 Requirements:
 
 * ``git >= 2.17.2``
 * ``python >= 3.6.8``
-
-To make installation easier, neuroCombat is not a formal dependency for this
-package, but the source code is included to call neuroCombat functions.
 
 **Option 1: Install from PyPI (Stable Version)**
 
@@ -223,6 +221,28 @@ code example plots both distributions for the location effect of site 1.
     >>> plt.show()
 
 .. image:: figure_1.png
+
+Reference Sites
+---------------
+
+Recently other implementations have been including the ability to specify a
+reference site or scanner, such that all data will be harmonized to that site.
+
+**This feature was added in version 2.4.x.** It can be used as in the following
+example:
+
+    >>> from neuroHarmonize import harmonizationLearn
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> # load your data and all numeric covariates
+    >>> my_data = pd.read_csv('brain_volumes.csv')
+    >>> my_data = np.array(my_data)
+    >>> covars = pd.read_csv('subject_info.csv')
+    >>> # run harmonization and store the adjusted data
+    >>> my_model, my_data_adj = harmonizationLearn(my_data, covars, ref_batch='SITE_A')
+
+Please submit any issues to [GitHub](https://github.com/rpomponio/neuroHarmonize/issues)
+if you run into trouble with this feature, as I am still testing its utility.
 
 Citations
 ---------
