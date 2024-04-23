@@ -4,12 +4,11 @@ import numpy as np
 import pandas as pd
 from statsmodels.gam.api import GLMGam, BSplines
 from .harmonizationApply import applyStandardizationAcrossFeatures
-from .neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
+from neuroCombat import make_design_matrix, find_parametric_adjustments, adjust_data_final, aprior, bprior
 import copy
 
-def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
-                       smooth_term_bounds=(None, None), return_s_data=False,
-                       orig_model=None, seed=None):
+def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bounds=(None, None),
+                       ref_batch=None, return_s_data=False, orig_model=None, seed=None):
     """
     Wrapper for neuroCombat function that returns the harmonization model.
     
@@ -39,6 +38,9 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         useful when holdout data covers different range than 
         specify the bounds as (minimum, maximum)
         currently not supported for models with mutliple smooth terms
+
+    ref_batch (Optional) : str, default None
+        batch (site or scanner) to be used as reference for batch adjustment
         
     return_s_data (Optional) : bool, default False
         whether to return s_data, the standardized data array
@@ -113,7 +115,18 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
     covars = np.array(covars, dtype='object')
     ### additional setup code from neuroCombat implementation:
     # convert batch col to integer
-    covars[:,batch_col] = np.unique(covars[:,batch_col],return_inverse=True)[-1]
+    if ref_batch is None:
+        covars[:,batch_col] = np.unique(covars[:,batch_col], return_inverse=True)[-1]
+        ref_level = None
+    else:
+        ref_indices = np.argwhere((covars[:,batch_col]==ref_batch).squeeze())
+        covars[:,batch_col] = np.unique(covars[:,batch_col], return_inverse=True)[-1]
+        if ref_indices.shape[0]==0:
+            print('[neuroHarmonize] batch.ref not found. Setting to None.')
+            ref_level = None
+            ref_batch = None
+        else:
+            ref_level = int(covars[ref_indices[0], batch_col])
     # create dictionary that stores batch info
     (batch_levels, sample_per_batch) = np.unique(covars[:,batch_col],return_counts=True)
     info_dict = {
@@ -121,10 +134,11 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         'n_batch': len(batch_levels),
         'n_sample': int(covars.shape[0]),
         'sample_per_batch': sample_per_batch.astype('int'),
-        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels]
+        'batch_info': [list(np.where(covars[:,batch_col]==idx)[0]) for idx in batch_levels],
+        'ref_level': ref_level
     }
     ###
-    design = make_design_matrix(covars, batch_col, cat_cols, num_cols)
+    design = make_design_matrix(covars, batch_col, cat_cols, num_cols, ref_level)
 
     
     
@@ -184,7 +198,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
         else:
             gamma_star = LS_dict['gamma_hat']
             delta_star = np.array(LS_dict['delta_hat'])
-        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict)
+        bayes_data = adjust_data_final(s_data, design, gamma_star, delta_star, stand_mean, var_pooled, info_dict, data)
         # save model parameters in single object
         model = {'design': design, 'SITE_labels': batch_labels,
                 'var_pooled':var_pooled, 'B_hat':B_hat, 'grand_mean': grand_mean,
@@ -192,7 +206,8 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
                 'gamma_hat': LS_dict['gamma_hat'], 'delta_hat': np.array(LS_dict['delta_hat']),
                 'gamma_bar': LS_dict['gamma_bar'], 't2': LS_dict['t2'],
                 'a_prior': LS_dict['a_prior'], 'b_prior': LS_dict['b_prior'],
-                'smooth_model': smooth_model, 'eb': eb,'SITE_labels_train':batch_labels,'Covariates':covar_levels}
+                'smooth_model': smooth_model, 'eb': eb,'SITE_labels_train':batch_labels,'Covariates':covar_levels,
+                'ref_batch': ref_batch}
         # transpose data to return to original shape
         bayes_data = bayes_data.T
     else:
@@ -209,7 +224,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             s_data_train, stand_mean_train, _ = applyStandardizationAcrossFeatures(data[:,isTrainSite], tmp[isTrainSite,:], info_dict_train, model)
             design2=tmp.copy()
             design2[:,isTrainSiteColumnsOrig[0]] = design[:,isTrainSiteColumns[0]]
-            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train)
+            bayes_data_train = adjust_data_final(s_data_train, design2[isTrainSite,:], model['gamma_star'], model['delta_star'], stand_mean_train, model['var_pooled'], info_dict_train, data)
             # transpose data to return to original shape
             bayes_data_train = bayes_data_train.T
 
@@ -244,7 +259,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[],
             model['gamma_star'] = np.append(model['gamma_star'],gamma_star,axis=0)
             model['delta_star'] = np.append(model['delta_star'],delta_star,axis=0)
             model['info_dict']['n_batch'] = len(model['SITE_labels'])
-            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test)
+            bayes_data_test = adjust_data_final(s_data_test, design_tmp[~isTrainSite,:], gamma_star, delta_star, stand_mean_test, model['var_pooled'], info_dict_test, data)
             # transpose data to return to original shape
             bayes_data_test = bayes_data_test.T
         bayes_data = np.zeros(shape=data.T.shape)
@@ -297,13 +312,23 @@ def standardizeAcrossFeatures(X, design, info_dict, smooth_model):
     ###
     else:
         B_hat = np.dot(np.dot(np.linalg.inv(np.dot(design.T, design)), design.T), X.T)
-    grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
-    var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
+
+    batch_info = info_dict['batch_info']
+    ref_level = info_dict['ref_level']
+    if ref_level is not None:
+        grand_mean = np.transpose(B_hat[ref_level, :])
+        X_ref = X[:, batch_info[ref_level]]
+        design_ref = design[batch_info[ref_level], :]
+        n_sample_ref = sample_per_batch[ref_level]
+        var_pooled = np.dot(((X_ref - np.dot(design_ref, B_hat).T)**2), np.ones((n_sample_ref, 1)) / float(n_sample_ref))
+    else:
+        grand_mean = np.dot((sample_per_batch/ float(n_sample)).T, B_hat[:n_batch,:])
+        var_pooled = np.dot(((X - np.dot(design, B_hat).T)**2), np.ones((n_sample, 1)) / float(n_sample))
 
     stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample))) # nothing but grand mean
     tmp = np.array(design.copy())
     tmp[:,:n_batch] = 0
-    stand_mean  += np.dot(tmp, B_hat).T  
+    stand_mean  += np.dot(tmp, B_hat).T 
     s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
     return s_data, stand_mean, var_pooled, B_hat, grand_mean

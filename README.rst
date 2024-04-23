@@ -29,7 +29,7 @@ features:
 Installation
 ------------
 
-Latest version: `2.3.1` (March 2024)
+Latest version: `2.4.0` (April 2024)
 
 Requirements:
 
