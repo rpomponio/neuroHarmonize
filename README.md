@@ -276,6 +276,4 @@ Citations
    M. L. Phillips, M. H. Trivedi, M. M. Weissman and R. T. Shinohara (2017).
    "Harmonization of cortical thickness measurements across scanners and sites."
    Neuroimage 167: 104-120. https://doi.org/10.1016/j.neuroimage.2017.11.024.
-[^3]: W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray
-   expression data using empirical Bayes methods. Biostatistics, 8(1):118-127,
-   2007. https://doi.org/10.1093/biostatistics/kxj037.
+[^3]: W. Evan Johnson and Cheng Li, Adjusting batch effects in microarray expression data using empirical Bayes methods. Biostatistics, 8(1):118-127, 2007. https://doi.org/10.1093/biostatistics/kxj037.
