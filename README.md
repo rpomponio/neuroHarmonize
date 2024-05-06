@@ -28,7 +28,7 @@ additional features:
 Installation
 ------------
 
-Latest development version: `2.4.1` (April 2024)
+Latest development version: `2.4.2` (May 2024)
 
 Requirements:
 
@@ -37,11 +37,15 @@ Requirements:
 
 **Option 1: Install from PyPI (Stable Version)**
 
-    >>> pip install neuroHarmonize
+   ```
+   pip install neuroHarmonize
+   ```
 
 **Option 2: Install from GitHub (Development Version)**
 
-    >>> pip install git+https://github.com/rpomponio/neuroHarmonize
+   ```
+   pip install git+https://github.com/rpomponio/neuroHarmonize
+   ```
 
 Quick Start
 -----------
