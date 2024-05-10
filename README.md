@@ -8,9 +8,7 @@ contact: raymond (dot) pomponio (at) outlook (dot) com
 Overview
 ---------
 
-This package extends the functionality of the package developed by Jean-Philippe
-Fortin and Nick Cullen [^2], `neuroCombat`. **New in version 2.4.x:**
-`neuroCombat` is now a formal dependency for `neuroHarmonize`.
+This package extends the functionality of the package developed by Jean-Philippe Fortin and Nick Cullen [^2], `neuroCombat`. **New in version 2.4.x:** `neuroCombat` is now a formal dependency.
 
 The reference implementation, `neuroCombat`, allows the user to perform a
 harmonization procedure using the ComBat [^3] algorithm for correcting
@@ -28,7 +26,7 @@ additional features:
 Installation
 ------------
 
-Latest development version: `2.4.2` (May 2024)
+Latest development version: `2.4.3` (May 2024)
 
 Requirements:
 

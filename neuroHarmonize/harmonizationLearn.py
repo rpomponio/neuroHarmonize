@@ -55,7 +55,7 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bound
     Returns
     -------
     model : a dictionary of estimated model parameters
-        design, var_pooled, B_hat, grand_mean,
+        design, var_pooled, B_hat, stand_mean, mod_mean,
         gamma_star, delta_star, info_dict (a neuroCombat invention),
         gamma_hat, delta_hat, gamma_bar, t2, a_prior, b_prior, smooth_model
     
@@ -392,7 +392,7 @@ def saveHarmonizationModel(model, file_name):
         raise ValueError('Model file already exists: %s. Change name or delete to save.' % file_name)
     # estimate size of out_file
     est_size = 0
-    for key in ['design', 'B_hat', 'grand_mean', 'var_pooled',
+    for key in ['design', 'B_hat', 'stand_mean', 'mod_mean', 'var_pooled',
                 'gamma_star', 'delta_star', 'gamma_hat', 'delta_hat']:
         est_size += model[key].nbytes / 1e6
     print('\n[neuroHarmonize]: Saving model object, estimated size in MB: %4.2f' % est_size)
