@@ -3,7 +3,9 @@
 Harmonization tools for multi-site neuroimaging analysis. Part of the work
 reported in our paper with data from the ISTAGING consoritum [^1].
 
-contact: raymond (dot) pomponio (at) outlook (dot) com
+**If you have identified a bug or are requesting a new feature, please submit an [issue](https://github.com/rpomponio/neuroHarmonize/issues) on GitHub so that progress can be tracked.**
+
+contact (see note above): raymond (dot) pomponio (at) outlook (dot) com
 
 Overview
 ---------
