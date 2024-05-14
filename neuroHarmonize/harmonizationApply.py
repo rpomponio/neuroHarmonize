@@ -194,18 +194,18 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
     D = design_i
     n_batch = len(batch_labels)
     j = batch_level_i[0]
-    ### from neuroCombat implementation:
+
     B_hat = model['B_hat']
-    grand_mean = model['grand_mean']
+    stand_mean = model['stand_mean']
     var_pooled = model['var_pooled']
-
-    stand_mean = np.dot(grand_mean.T.reshape((len(grand_mean), 1)), np.ones((1, n_sample)))
-    tmp = np.array(D.copy())
-    tmp[:,:n_batch] = 0
-    stand_mean += np.dot(tmp, B_hat).T
-
-    s_data = ((X- stand_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
-
+    
+    # new code in neuroCombat to compute model mean
+    if design_i is not None:
+        tmp = copy.deepcopy(design_i)
+        tmp[:,range(0,n_batch)] = 0
+        mod_mean = np.transpose(np.dot(tmp, B_hat))
+    
+    s_data = ((X- stand_mean - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
 
     if sum(isTrainSite)==0:
         bayesdata = np.full(s_data.shape,np.nan)
