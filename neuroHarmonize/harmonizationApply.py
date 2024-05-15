@@ -183,8 +183,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
     # encode batches as in larger dataset
     design_i_batch = np.zeros((1, len(batch_labels)))
     design_i_batch[:, batch_level_i] = 1
-#    design_i = np.concatenate((design_i_batch, design_i[:, 1:]), axis=1)
-    design_i = np.concatenate((design_i_batch, design_i[:, len(batch_labels):]), axis=1)
+    design_i = np.concatenate((design_i_batch, design_i[:, 1:]), axis=1)
 
     design_i[~isTrainSite,0:len(model['SITE_labels'])] = np.nan
 
@@ -205,7 +204,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         tmp[:,range(0,n_batch)] = 0
         mod_mean = np.transpose(np.dot(tmp, B_hat))
     
-    s_data = ((X- stand_mean - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample))))
+    s_data = (X- stand_mean[:, [0]] - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample)))
 
     if sum(isTrainSite)==0:
         bayesdata = np.full(s_data.shape,np.nan)
