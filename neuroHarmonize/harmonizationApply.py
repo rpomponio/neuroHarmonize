@@ -224,7 +224,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         bayesdata = numer / denom
 
         vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
-        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
+        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean[:, [0]]
     
 
     # return either bayesdata or both
