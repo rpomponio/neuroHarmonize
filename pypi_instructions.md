@@ -6,7 +6,7 @@ See the following link for detailed instructions, though note that several steps
 
 Follow the instructions below:
 
-1. Delete old distributions in `dist/`.
+1. Delete old distributions in `dist/` and `src/`.
 2. Upgrade packages `pip`, `build`, and `twine`.
 3. Copy contents of `/neuroHarmonize/` to `/src/neuroHarmonize/`.
 
