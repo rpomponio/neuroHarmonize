@@ -28,7 +28,7 @@ additional features:
 Installation
 ------------
 
-Latest development version: `2.4.4` (May 2024)
+Latest development version: `2.4.5` (in dev mode)
 
 Requirements:
 

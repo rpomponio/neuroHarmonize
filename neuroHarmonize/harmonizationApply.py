@@ -129,7 +129,7 @@ def applyStandardizationAcrossFeatures(X, design, info_dict, model):
     sample_per_batch = info_dict['sample_per_batch']
 
     B_hat = model['B_hat']
-    stand_mean = model['stand_mean']
+    stand_mean = model['stand_mean'][:, [0]]
     var_pooled = model['var_pooled']
     
     # new code in neuroCombat to compute model mean
@@ -195,7 +195,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
     j = batch_level_i[0]
 
     B_hat = model['B_hat']
-    stand_mean = model['stand_mean']
+    stand_mean = model['stand_mean'][:, [0]]
     var_pooled = model['var_pooled']
     
     # new code in neuroCombat to compute model mean
@@ -204,7 +204,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         tmp[:,range(0,n_batch)] = 0
         mod_mean = np.transpose(np.dot(tmp, B_hat))
     
-    s_data = (X- stand_mean[:, [0]] - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample)))
+    s_data = (X- stand_mean - mod_mean) / np.dot(np.sqrt(var_pooled), np.ones((1, n_sample)))
 
     if sum(isTrainSite)==0:
         bayesdata = np.full(s_data.shape,np.nan)
@@ -224,7 +224,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         bayesdata = numer / denom
 
         vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
-        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean[:, [0]]
+        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
     
 
     # return either bayesdata or both
