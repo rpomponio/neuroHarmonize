@@ -8,7 +8,7 @@ Follow the instructions below:
 
 1. Delete old distributions in `dist/` and `src/`.
 2. Upgrade packages `pip`, `build`, and `twine`.
-3. Copy contents of `/neuroHarmonize/` to `/src/neuroHarmonize/`.
+3. Copy contents of `neuroHarmonize/` to `src/neuroHarmonize/`.
 
       ```cp neuroHarmonize/* src/neuroHarmonize/```
 
