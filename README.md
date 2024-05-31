@@ -89,6 +89,13 @@ The dimensionality of this dataframe must be: **N_samples x N_Covariates**
 The order of samples must be identical in the **covariate_matrix** and the
 **data_matrix**.
 
+The data matrix and the covariate matrix **may not contain missing values**. If you include missing
+values in your data such as `np.nan`, you will encounter errors. Therefore you must
+perform a complete case analysis. Alterntatively, consider an imputation procedure (beyong the scope
+of this software, however
+[this implementation](https://github.com/Jfortin1/ComBatHarmonization?tab=readme-ov-file) may
+offer a solution).
+
 After preparing both inputs, you can call `harmonizationLearn` to harmonize
 the provided dataset.
 

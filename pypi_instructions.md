@@ -29,4 +29,5 @@ Follow the instructions below:
 
 8. Finally (optional) discard all local changes in the repository to revert to developer state.
 
-      ```git stash```
+      ```mv setup.cfg .setup.cfg```
+      ```mv .setup.py setup.py```
