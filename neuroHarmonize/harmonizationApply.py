@@ -224,12 +224,14 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         bayesdata = numer / denom
 
         vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
-        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean
+        bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean + mod_mean
     
 
     # return either bayesdata or both
     if return_stand_mean:
-        return bayesdata.T, stand_mean.T
+        # Return the complete reference (stand_mean + mod_mean) for NIFTI output
+        reference_mean = stand_mean + mod_mean
+        return bayesdata.T, reference_mean.T
     else:
         return bayesdata.T
 #    return bayesdata.T

@@ -150,18 +150,18 @@ def applyModelNIFTIs(covars, model, paths, mask_path):
         affine = nifti.affine
         header = nifti.header
 #        nifti_array_adj = applyModelOne(nifti_array, covarsSel, model)
-        nifti_array_adj, nifti_array_stand_mean = applyModelOne(nifti_array, covarsSel, model, True) #return stand_mean as well
+        nifti_array_adj, nifti_array_reference = applyModelOne(nifti_array, covarsSel, model, True) #return reference mean (stand_mean + mod_mean)
         nifti_out = nifti_mask.astype(float).copy()
         nifti_out[nifti_mask] = nifti_array_adj[0, :]
         nifti_out = nib.Nifti1Image(np.round(nifti_out).astype(np.int16), affine, header) #fix scaling issue
         nifti_out.to_filename(path_new)
 
-        #save stand_mean in nifti
-        nifti_out_stand_mean = nifti_mask.astype(float).copy()
-        nifti_out_stand_mean[nifti_mask] = nifti_array_stand_mean[0, :]
-        nifti_out_stand_mean = nib.Nifti1Image(np.round(nifti_out_stand_mean).astype(np.int16), affine, header) #fix scaling issue
-        path_new_stand_mean = path_new.replace('_harmonized.nii.gz', '_stand_mean.nii.gz')
-        nifti_out_stand_mean.to_filename(path_new_stand_mean)
+        #save reference mean (stand_mean + mod_mean) in nifti
+        nifti_out_reference = nifti_mask.astype(float).copy()
+        nifti_out_reference[nifti_mask] = nifti_array_reference[0, :]
+        nifti_out_reference = nib.Nifti1Image(np.round(nifti_out_reference).astype(np.int16), affine, header) #fix scaling issue
+        path_new_reference = path_new.replace('_harmonized.nii.gz', '_reference_mean.nii.gz')
+        nifti_out_reference.to_filename(path_new_reference)
 
 
         if (i==500):

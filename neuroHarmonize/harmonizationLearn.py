@@ -70,8 +70,6 @@ def harmonizationLearn(data, covars, eb=True, smooth_terms=[], smooth_term_bound
     """
     # set optional random seed
     if seed is not None:
-        pass
-    else:
         np.random.seed(seed)
 
     if orig_model is None:
