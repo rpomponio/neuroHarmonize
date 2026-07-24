@@ -154,7 +154,7 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
     X = data.T
     # prep covariate data
     batch_labels = model['SITE_labels']
-    batch_i = covars.SITE.values[0]
+    batch_i = covars.SITE.to_numpy()[0]
     isTrainSite = covars['SITE'].isin(model['SITE_labels'])
 
     if batch_i not in batch_labels:

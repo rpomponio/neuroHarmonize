@@ -32,8 +32,7 @@ Latest development version: `2.4.5` (in dev mode)
 
 Requirements:
 
-* `git >= 2.17.2`
-* `python >= 3.6.8`
+* `python >= 3.9`
 
 **Option 1: Install from PyPI (Stable Version)**
 
