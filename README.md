@@ -9,6 +9,7 @@ reported in our paper with data from the ISTAGING consoritum [^1].
 **If you have identified a bug or are requesting a new feature, please submit an [issue](https://github.com/rpomponio/neuroHarmonize/issues) on GitHub so that progress can be tracked.**
 
 Originally-Authored-By: Raymond Pomponio (2020) r<aymond.pomponio@outlook.com>
+
 Co-Authored-By: Claude Sonnet 4.5 (2026) <noreply@anthropic.com>
 
 Overview
