@@ -14,4 +14,7 @@ setup(name='neuroHarmonize',
       license='MIT',
       packages=['neuroHarmonize'],
       install_requires=['numpy', 'pandas', 'nibabel', 'statsmodels>=0.12.0', 'neuroCombat==0.2.12'],
+      extras_require={
+          'dev': ['pytest>=7.0.0', 'pytest-cov>=4.0.0']
+      },
       zip_safe=False)
