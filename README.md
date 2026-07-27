@@ -8,14 +8,16 @@ reported in our paper with data from the ISTAGING consoritum [^1].
 
 **If you have identified a bug or are requesting a new feature, please submit an [issue](https://github.com/rpomponio/neuroHarmonize/issues) on GitHub so that progress can be tracked.**
 
-Originally-Authored-By: Raymond Pomponio (2020) r<aymond.pomponio@outlook.com>
+Originally-Authored-By: Raymond Pomponio (2020) <raymond.pomponio@outlook.com>
+
+Contributers: Ahmed Abdulkadir, Yuhan Cui, Randa Melhem
 
 Co-Authored-By: Claude Sonnet 4.5 (2026) <noreply@anthropic.com>
 
 Overview
 ---------
 
-This package extends the functionality of the package developed by Jean-Philippe Fortin and Nick Cullen [^2], `neuroCombat`. **New in version 2.4.x:** `neuroCombat` is now a formal dependency.
+This package extends the functionality of the package developed by Jean-Philippe Fortin and Nick Cullen [^2], `neuroCombat`. In versions >= 2.4.0, `neuroCombat` is a formal dependency.
 
 The reference implementation, `neuroCombat`, allows the user to perform a
 harmonization procedure using the ComBat [^3] algorithm for correcting
