@@ -3,8 +3,8 @@
 Harmonization tools for multi-site neuroimaging analysis. Part of the work
 reported in our paper with data from the ISTAGING consoritum [^1].
 
-> **⚠️ IMPORTANT - Version 2.5.0 Critical Bug Fix**  
-> If you have previously harmonized NIFTI images using `applyModelNIFTIs` with versions < 2.5.0, **you must re-harmonize your data**. A critical bug was fixed where covariate effects (age, sex, etc.) were incorrectly stripped from harmonized NIFTI images. See [CHANGELOG.md](CHANGELOG.md) for details.
+> **⚠️ IMPORTANT - Version 2.5.1 NIFTI Precision Fix**  
+> If you have previously harmonized NIFTI images using `applyModelNIFTIs` with versions < 2.5.1, **you should re-harmonize your data**. Version 2.5.1 fixes a rounding issue (int16 cast) that caused the NIFTI path to diverge from the tabular path, and a ref_level bug affecting reference-batch images. NIFTI output is now float32 by default. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 **If you have identified a bug or are requesting a new feature, please submit an [issue](https://github.com/rpomponio/neuroHarmonize/issues) on GitHub so that progress can be tracked.**
 

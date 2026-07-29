@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-07-29
+
+### Fixed
+
+- **NIFTI output now preserves floating-point precision** ([#51](https://github.com/rpomponio/neuroHarmonize/issues/51)): Removed the `np.round().astype(np.int16)` cast in `applyModelNIFTIs` that was destroying fractional precision. Output is now float32 by default, matching the tabular path exactly. An `output_dtype` parameter is available for legacy int16 behavior.
+
+- **Reference batch samples no longer incorrectly adjusted in NIFTI path** ([#51](https://github.com/rpomponio/neuroHarmonize/issues/51)): `applyModelOne` now honors `ref_level` by returning original data for samples belonging to the reference batch, consistent with `adjust_data_final` in the tabular path.
+
+- **Mask saved as int8 instead of int16**: `createMaskNIFTI` now writes with a clean header (int8 dtype, no slope/intercept) to avoid scaling artifacts.
+
+### Added
+
+- **Affine and shape validation in NIFTI functions**: `applyModelNIFTIs` and `flattenNIFTIs` now raise `ValueError` on dimension mismatch and emit a `UserWarning` when an image's affine does not match the mask.
+
+- **Smoothing guard in `applyModelOne`**: Raises `NotImplementedError` if the model was trained with `smooth_terms`, directing users to the batch path (`flattenNIFTIs` + `harmonizationApply`).
+
+- **`output_dtype` parameter for `applyModelNIFTIs`**: Defaults to `np.float32`; pass `np.int16` to restore the legacy rounding behavior.
+
+- **NIFTI consistency test suite** (`tests/test_nifti_consistency.py`): 8 tests covering tabular/NIFTI equivalence, ref_level handling, affine validation, and the smoothing guard.
+
+---
+
 ## [2.5.0] - 2026-07-24
 
 ### ⚠️ BREAKING CHANGES

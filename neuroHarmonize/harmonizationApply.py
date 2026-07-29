@@ -150,6 +150,10 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
         raise ValueError('Argument `data` contains more than one sample!')
     if covars.shape[0]>1:
         raise ValueError('Argument `covars` contains more than one sample!')
+    if model['smooth_model']['perform_smoothing']:
+        raise NotImplementedError(
+            '[neuroHarmonize] applyModelOne does not support models trained with '
+            'smooth_terms. Use flattenNIFTIs + harmonizationApply instead.')
     # transpose data as per ComBat convention
     X = data.T
     # prep covariate data
@@ -225,7 +229,10 @@ def applyModelOne(data, covars, model, return_stand_mean=False):
 
         vpsq = np.sqrt(var_pooled).reshape((len(var_pooled), 1))
         bayesdata = bayesdata * np.dot(vpsq, np.ones((1, n_sample))) + stand_mean + mod_mean
-    
+
+        # preserve original data for reference batch (mirrors adjust_data_final)
+        if ref_level is not None and batch_level_i[0] == ref_level:
+            bayesdata = X
 
     # return either bayesdata or both
     if return_stand_mean:
