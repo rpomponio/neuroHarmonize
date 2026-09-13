@@ -8,11 +8,9 @@ reported in our paper with data from the ISTAGING consoritum [^1].
 
 **If you have identified a bug or are requesting a new feature, please submit an [issue](https://github.com/rpomponio/neuroHarmonize/issues) on GitHub so that progress can be tracked.**
 
-Originally-Authored-By: Raymond Pomponio (2020) <raymond.pomponio@outlook.com>
+Originally-Authored-By: Raymond Pomponio
 
-Contributers: Ahmed Abdulkadir, Yuhan Cui, Randa Melhem
-
-Co-Authored-By: Claude Sonnet 4.5 (2026) <noreply@anthropic.com>
+Contributors: Ahmed Abdulkadir, Yuhan Cui, Randa Melhem, Claude Sonnet 4.5
 
 Overview
 ---------
@@ -278,7 +276,7 @@ covars = pd.read_csv('subject_info.csv')
 my_model, my_data_adj = harmonizationLearn(my_data, covars, ref_batch='SITE_A')
 ```
 
-Please submit any issues to [GitHub](https://github.com/rpomponio/neuroHarmonize/issues)
+Please submit any issues to [GitHub](https://github.com/r/neuroHarmonize/issues)
 if you run into trouble with this feature, as I am still testing its utility.
 
 Citations
