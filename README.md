@@ -276,7 +276,7 @@ covars = pd.read_csv('subject_info.csv')
 my_model, my_data_adj = harmonizationLearn(my_data, covars, ref_batch='SITE_A')
 ```
 
-Please submit any issues to [GitHub](https://github.com/r/neuroHarmonize/issues)
+Please submit any issues to [GitHub](https://github.com/rpomponio/neuroHarmonize/issues)
 if you run into trouble with this feature, as I am still testing its utility.
 
 Citations
