@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='neuroHarmonize',
-      version='2.5.1',
+    version='2.5.2',
       description='Harmonization tools for multi-center neuroimaging studies.',
       long_description=readme(),
       long_description_content_type='text/markdown',
@@ -34,6 +34,8 @@ setup(name='neuroHarmonize',
           'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: 3.11',
           'Programming Language :: Python :: 3.12',
+          'Programming Language :: Python :: 3.13',
+          'Programming Language :: Python :: 3.14',
           'Topic :: Scientific/Engineering :: Medical Science Apps.',
           'Topic :: Scientific/Engineering :: Image Processing',
       ],

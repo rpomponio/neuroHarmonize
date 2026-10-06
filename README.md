@@ -39,7 +39,7 @@ Latest stable version: `2.5.0`
 
 Requirements:
 
-* `python >= 3.9`
+* `python >= 3.9` (locally validated on CPython 3.9-3.14; CI covers the same versions)
 
 **Option 1: Install from PyPI (Stable Version)**
 
